@@ -1,0 +1,11 @@
+server:
+  port: 42000
+  tomcat:
+    uri-encoding: utf-8
+ssdb-local:
+  host: 125.216.242.71
+  port: 42880
+ssdb-common:
+  host: 125.216.242.71
+  port: 42870
+  init: true
