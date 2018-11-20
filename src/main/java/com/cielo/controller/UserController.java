@@ -1,6 +1,5 @@
 package com.cielo.controller;
 
-import com.cielo.model.ParamModel;
 import com.cielo.model.Permission;
 import com.cielo.model.Role;
 import com.cielo.model.User;
