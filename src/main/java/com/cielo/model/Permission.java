@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class Permission {
-    public static final int EDIT_PERMISSION = 0;
+    public static final int EDIT_ROLE = 0;
     public static final int GET_USER = 1;
     public static final int EDIT_USER = 2;
     public static final int SHOW_PERMISSION = 3;

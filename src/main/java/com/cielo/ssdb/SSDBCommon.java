@@ -7,6 +7,8 @@ import com.cielo.model.User;
 import lombok.Data;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.nutz.ssdb4j.SSDBs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -17,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @Order(2)
@@ -25,6 +26,7 @@ import java.util.Map;
 @Configuration
 @ConfigurationProperties("ssdb-common")
 public class SSDBCommon extends SSDBBase implements CommandLineRunner {
+    Logger logger = LoggerFactory.getLogger(this.getClass());
     @Value("localhost")
     private String host;
     @Value("8888")
@@ -80,14 +82,14 @@ public class SSDBCommon extends SSDBBase implements CommandLineRunner {
     //生成数据库初始数据
     public void initDatabase() {
         //初始化权限
-        setObject(Permission.key(Permission.EDIT_PERMISSION), new Permission(Permission.EDIT_PERMISSION, "edit permission"));
+        setObject(Permission.key(Permission.EDIT_ROLE), new Permission(Permission.EDIT_ROLE, "edit permission"));
         setObject(Permission.key(Permission.EDIT_USER), new Permission(Permission.EDIT_USER, "edit user"));
         setObject(Permission.key(Permission.GET_USER), new Permission(Permission.GET_USER, "get user"));
         setObject(Permission.key(Permission.SHOW_PERMISSION), new Permission(Permission.SHOW_PERMISSION, "show permission"));
         //初始化管理员角色
         setObject(Role.key(Role.ADMIN), new Role(Role.ADMIN, new HashSet<Integer>() {
             {
-                add(Permission.EDIT_PERMISSION);
+                add(Permission.EDIT_ROLE);
                 add(Permission.GET_USER);
                 add(Permission.EDIT_USER);
                 add(Permission.SHOW_PERMISSION);
@@ -97,14 +99,15 @@ public class SSDBCommon extends SSDBBase implements CommandLineRunner {
         setObject(Role.key(Role.GUEST), new Role(Role.GUEST, new HashSet<>()));
         //初始化管理员用户
         setObject(User.key("admin"), new User("admin", "admin", Role.ADMIN));
-    }
-
-    public Map<String, String> getArrayString(String pattern) {
-        return getArrayString(pattern, scanNumber);
+        logger.info("The ssdb database has init");
     }
 
     public <T> List<T> getArrayObject(String pattern, Class<T> clazz, Feature... features) {
         return getArrayObject(pattern, scanNumber, clazz, features);
+    }
+
+    public <T> List<T> getArrayObject(String fromPattern, String endPattern, Class<T> clazz, Feature... features) {
+        return getArrayObject(fromPattern, endPattern, scanNumber, clazz, features);
     }
 
     public int count(String pattern) {

@@ -1,6 +1,6 @@
 package com.cielo.controller;
 
-import com.cielo.model.BodyWithToken;
+import com.cielo.model.ParamModel;
 import com.cielo.model.Permission;
 import com.cielo.model.Role;
 import com.cielo.model.User;
@@ -24,7 +24,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("user")
+    @PostMapping
     public String setUp(String username, String password) throws Exception {
         if (ssdbCommon.exists(User.key(username))) throw new AuthenticationException("Username has existed.");
         User user = new User(username, password, Role.GUEST);
@@ -41,66 +41,63 @@ public class UserController {
         } else throw new AuthenticationException("Username does not exist.");
     }
 
-    @DeleteMapping("token")
-    public void logout(String token) {
-        ssdbCommon.del(token);
+    @DeleteMapping("token/{token}")
+    public void logout(@PathVariable String token) {
+        userService.deleteToken(token);
     }
 
-    @GetMapping("token")
-    public User getUserInfo(String token) throws Exception {
-        if (ssdbCommon.exists(token)) return ssdbCommon.getObject(token, User.class);
-        else throw new AuthenticationException("Your token does not exists.");
+    @GetMapping("{token}")
+    public User getUser(@PathVariable String token) throws Exception {
+        return userService.getUser(token);
     }
 
-    @PutMapping("token")
-    public String updateUser(String token, String password) throws Exception {
-        User user = getUserInfo(token);
+    @PutMapping("{token}")
+    public String updateUser(@PathVariable String token, String password) throws Exception {
+        User user = getUser(token);
         ssdbCommon.del(token);
         user.setPassword(password);
         ssdbCommon.setObject(User.key(user.getUsername()), user);
         return userService.generateToken(user);
     }
 
-    @GetMapping("role")
-    public Role getRole(String token) throws Exception {
-        User user = getUserInfo(token);
-        return ssdbCommon.getObject(Role.key(user.getRoleId()), Role.class);
+    @GetMapping("role/{token}")
+    public Role getRole(@PathVariable String token) throws Exception {
+        return userService.getRole(token);
     }
 
-    @GetMapping("permission")
-    public Set<Permission> showPermission(String token) throws Exception {
+    @GetMapping("permission/{token}")
+    public Set<Permission> showPermission(@PathVariable String token) throws Exception {
         return getRole(token).getPermissions().parallelStream().map(permissionId -> ssdbCommon.getObject(Permission.key(permissionId), Permission.class)).collect(Collectors.toSet());
     }
 
-    @PostMapping("admin/user")
-    public void editUser(@RequestBody BodyWithToken<User> body) throws Exception {
-        if (userService.hasPermission(getRole(body.getToken()), Permission.EDIT_USER)) {
-            User user = body.getBody();
+    @PostMapping("admin/{token}")
+    public void editUser(@PathVariable String token,@RequestBody User user) throws Exception {
+        if (userService.hasPermission(token, Permission.EDIT_USER)) {
             ssdbCommon.setObject(User.key(user.getUsername()), user);
         } else throw new NoPermissionException("You do not have the permission for adding user.");
     }
 
-    @GetMapping("admin/permission")
-    public List<Permission> showAllPermission(String token) throws Exception {
-        if (userService.hasPermission(getRole(token), Permission.GET_USER))
+    @GetMapping("admin/permission/{token}")
+    public List<Permission> showAllPermission(@PathVariable String token) throws Exception {
+        if (userService.hasPermission(token, Permission.GET_USER))
             return ssdbCommon.getArrayObject("permission_", Permission.class);
         else throw new NoPermissionException("You do not have the permission to show user.");
     }
 
-    @PostMapping("admin/permission")
-    public void addPermission(String token, Set<Integer> permissions) throws Exception {
-        if (userService.hasPermission(getRole(token), Permission.EDIT_PERMISSION)) {
+    @PostMapping("admin/role/{token}")
+    public void addRole(@PathVariable String token, @RequestBody Set<Integer> permissions) throws Exception {
+        if (userService.hasPermission(token, Permission.EDIT_ROLE)) {
             Role role = new Role(ssdbCommon.count("role_"), permissions);
-            ssdbCommon.setObject(Role.key(role.getRoleId()), Role.class);
+            ssdbCommon.setObject(Role.key(role.getRoleId()), role);
         } else throw new NoPermissionException("You do not have the permission to edit permission.");
     }
 
-    @PutMapping("admin/permission")
-    public void editPermission(String token, Integer roleId, Set<Integer> permissions) throws Exception {
-        if (userService.hasPermission(getRole(token), Permission.EDIT_PERMISSION)) {
+    @PutMapping("admin/role/{roleId}/{token}")
+    public void editRole(@PathVariable String token, @PathVariable Integer roleId, @RequestBody Set<Integer> permissions) throws Exception {
+        if (userService.hasPermission(token, Permission.EDIT_ROLE)) {
             Role role = ssdbCommon.getObject(Role.key(roleId), Role.class);
             role.setPermissions(permissions);
-            ssdbCommon.setObject(Role.key(roleId), Role.class);
+            ssdbCommon.setObject(Role.key(roleId), role);
         }
     }
 

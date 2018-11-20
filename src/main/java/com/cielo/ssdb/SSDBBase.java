@@ -41,17 +41,27 @@ public abstract class SSDBBase {
     }
 
     public Map<String, String> getArrayString(String pattern, int scanNumber) {
-        String keyStart = pattern;
-        String keyEnd = pattern + '}';
-        return ssdb.scan(keyStart, keyEnd, scanNumber).mapString();
+        return getArrayString(pattern, pattern + '}', scanNumber);
+    }
+
+    public Map<String, String> getArrayString(String fromPattern, String endPattern, int scanNumber) {
+        return ssdb.scan(fromPattern, endPattern, scanNumber).mapString();
     }
 
     public <T> List<T> getArrayObject(String pattern, int scanNumber, Class<T> clazz, Feature... features) {
         return getArrayString(pattern, scanNumber).values().parallelStream().map(jsonStr -> JSON.parseObject(jsonStr, clazz, features)).collect(Collectors.toList());
     }
 
+    public <T> List<T> getArrayObject(String fromPattern, String endPattern, int scanNumber, Class<T> clazz, Feature... features) {
+        return getArrayString(fromPattern, endPattern, scanNumber).values().parallelStream().map(jsonStr -> JSON.parseObject(jsonStr, clazz, features)).collect(Collectors.toList());
+    }
+
     public int count(String pattern, int scanNumber) {
         return getArrayString(pattern, scanNumber).size();
+    }
+
+    public Response expire(String key, int ttl) {
+        return ssdb.expire(key, ttl);
     }
 
     public Response del(String key) {

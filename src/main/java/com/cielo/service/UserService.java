@@ -6,6 +6,7 @@ import com.cielo.ssdb.SSDBCommon;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.naming.AuthenticationException;
 import java.util.UUID;
 
 @Service
@@ -19,8 +20,15 @@ public class UserService {
         return token;
     }
 
-    public User getByToken(String token) {
-        return ssdbCommon.getObject(token, User.class);
+    public User getUser(String token) throws AuthenticationException {
+        if (ssdbCommon.exists(token)) {
+            ssdbCommon.expire(token, 60 * 60 * 24);
+            return ssdbCommon.getObject(token, User.class);
+        } else throw new AuthenticationException("Your stringParam does not exists.");
+    }
+
+    public Role getRole(String token) throws AuthenticationException {
+        return ssdbCommon.getObject(Role.key(getUser(token).getRoleId()), Role.class);
     }
 
     public void deleteToken(String token) {
@@ -29,5 +37,9 @@ public class UserService {
 
     public boolean hasPermission(Role role, Integer permission) {
         return role.getPermissions().parallelStream().anyMatch(permissionId -> permissionId == permission);
+    }
+
+    public boolean hasPermission(String token, Integer permission) throws AuthenticationException {
+        return hasPermission(getRole(token), permission);
     }
 }
