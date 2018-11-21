@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 
 @Data
 @Service
-@Order(3)
+@Order(4)
 @Configuration
 @ConfigurationProperties("device-server")
 public class DeviceServer implements CommandLineRunner {

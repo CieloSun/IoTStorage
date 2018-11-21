@@ -1,7 +1,7 @@
 package com.cielo.service;
 
 import com.cielo.model.DeviceModel;
-import com.cielo.ssdb.SSDBCommon;
+import com.cielo.ssdb.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +10,7 @@ import java.util.List;
 @Service
 public class DeviceService {
     @Autowired
-    private SSDBCommon ssdbCommon;
+    private SSDBUtil ssdbUtil;
 
     private String key(DeviceModel deviceModel) {
         return "device_" + deviceModel.getDeviceId() + "_" + deviceModel.getFunctionId() + "_" + deviceModel.getDate();
@@ -32,16 +32,16 @@ public class DeviceService {
         if (deviceModel.getDate() == null) {
             deviceModel.setDate(System.currentTimeMillis());
         }
-        ssdbCommon.setObject(key(deviceModel), deviceModel);
-        ssdbCommon.setObject(latest(deviceModel), deviceModel);
+        ssdbUtil.set(key(deviceModel), deviceModel);
+        ssdbUtil.set(latest(deviceModel), deviceModel);
     }
 
     public DeviceModel getDeviceInfo(String deviceId, Integer functionId, Long date) {
-        return ssdbCommon.getObject(key(deviceId, functionId, date), DeviceModel.class);
+        return ssdbUtil.get(key(deviceId, functionId, date), DeviceModel.class);
     }
 
     public DeviceModel getLatestDeviceInfo(String deviceId, Integer functionId) {
-        return ssdbCommon.getObject(latest(deviceId, functionId), DeviceModel.class);
+        return ssdbUtil.get(latest(deviceId, functionId), DeviceModel.class);
     }
 
     public String getLatestDeviceInfoKey(String deviceId, Integer functionId) {
@@ -56,6 +56,6 @@ public class DeviceService {
         if (endDate == null) {
             endDate = System.currentTimeMillis();
         }
-        return ssdbCommon.getArrayObject(key(deviceId, functionId, startDate), key(deviceId, functionId, endDate), DeviceModel.class);
+        return ssdbUtil.getObjects(key(deviceId, functionId, startDate), key(deviceId, functionId, endDate), DeviceModel.class);
     }
 }
