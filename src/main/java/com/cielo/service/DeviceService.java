@@ -12,19 +12,23 @@ public class DeviceService {
     @Autowired
     private SSDBUtil ssdbUtil;
 
-    private String key(DeviceModel deviceModel) {
+    public String pattern(String deviceId, Integer functionId) {
+        return "device_" + deviceId + "_" + functionId + "_";
+    }
+
+    public String key(DeviceModel deviceModel) {
         return "device_" + deviceModel.getDeviceId() + "_" + deviceModel.getFunctionId() + "_" + deviceModel.getDate();
     }
 
-    private String key(String deviceId, Integer functionId, Long date) {
+    public String key(String deviceId, Integer functionId, Long date) {
         return "device_" + deviceId + "_" + functionId + "_" + date;
     }
 
-    private String latest(DeviceModel deviceModel) {
+    public String latest(DeviceModel deviceModel) {
         return "latest_device_" + deviceModel.getDeviceId() + "_" + deviceModel.getFunctionId();
     }
 
-    private String latest(String deviceId, Integer functionId) {
+    public String latest(String deviceId, Integer functionId) {
         return "latest_device_" + deviceId + "_" + functionId;
     }
 
@@ -34,10 +38,6 @@ public class DeviceService {
         }
         ssdbUtil.set(key(deviceModel), deviceModel);
         ssdbUtil.set(latest(deviceModel), deviceModel);
-    }
-
-    public DeviceModel getDeviceInfo(String deviceId, Integer functionId, Long date) {
-        return ssdbUtil.get(key(deviceId, functionId, date), DeviceModel.class);
     }
 
     public DeviceModel getLatestDeviceInfo(String deviceId, Integer functionId) {
@@ -57,5 +57,9 @@ public class DeviceService {
             endDate = System.currentTimeMillis();
         }
         return ssdbUtil.getObjects(key(deviceId, functionId, startDate), key(deviceId, functionId, endDate), DeviceModel.class);
+    }
+
+    public DeviceModel getDeviceInfo(String deviceId, Integer functionId, Long date) {
+        return ssdbUtil.get(key(deviceId, functionId, date), DeviceModel.class);
     }
 }

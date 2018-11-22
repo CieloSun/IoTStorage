@@ -56,6 +56,8 @@ public class SSDBLoader implements CommandLineRunner {
     private boolean init;
     @Value("1000")
     private int scanNumber;
+    @Value("100")
+    private int functionNumber;
 
     @Autowired
     private SSDBUtil ssdbUtil;
@@ -79,6 +81,7 @@ public class SSDBLoader implements CommandLineRunner {
         //生成ssdb对象
         ssdbUtil.setSsdb(SSDBs.pool(host, port, timeout, genericObjectPoolConfig));
         ssdbUtil.setDefaultScanNumber(scanNumber);
+        ssdbUtil.setDefaultFunctionNumber(functionNumber);
         if (init) initDatabase();
     }
 

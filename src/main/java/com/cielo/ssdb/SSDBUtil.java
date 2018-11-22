@@ -10,12 +10,14 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @Data
 public class SSDBUtil {
     private SSDB ssdb;
     private int defaultScanNumber;
+    private int defaultFunctionNumber;
 
     public Response setVal(String key, Object val) {
         return ssdb.set(key, val);
@@ -45,32 +47,58 @@ public class SSDBUtil {
         return JSON.parseObject(getString(key), clazz, features);
     }
 
-    public Map<String, String> getMapString(String pattern, int scanNumber) {
-        return getMapString(pattern, pattern + '}', scanNumber);
+    private Map<String, String> getObjectMap(String pattern, int scanNumber) {
+        return getObjectMap(pattern, pattern + '}', scanNumber);
     }
 
-    public Map<String, String> getMapString(String fromPattern, String endPattern, int scanNumber) {
+    private Map<String, String> getObjectMap(String fromPattern, String endPattern, int scanNumber) {
         return ssdb.scan(fromPattern, endPattern, scanNumber).mapString();
     }
 
-    public <T> List<T> getObjects(String pattern, int scanNumber, Class<T> clazz, Feature... features) {
-        return getMapString(pattern, scanNumber).values().parallelStream().map(jsonStr -> JSON.parseObject(jsonStr, clazz, features)).collect(Collectors.toList());
+    private String mergeJson(List<String> jsonObjects) {
+        StringBuilder stringBuilder = new StringBuilder("[");
+        IntStream.range(0, jsonObjects.size()).forEach(i -> {
+            stringBuilder.append(jsonObjects.get(i));
+            if (i < jsonObjects.size() - 1) stringBuilder.append(",");
+        });
+        stringBuilder.append("]");
+        return stringBuilder.toString();
     }
 
-    public <T> List<T> getObjects(String fromPattern, String endPattern, int scanNumber, Class<T> clazz, Feature... features) {
-        return getMapString(fromPattern, endPattern, scanNumber).values().parallelStream().map(jsonStr -> JSON.parseObject(jsonStr, clazz, features)).collect(Collectors.toList());
+    public String getListString(String pattern, int scanNumber) {
+        return mergeJson(getObjectMap(pattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
+    }
+
+    public String getListString(String pattern) {
+        return mergeJson(getObjectMap(pattern, defaultScanNumber).values().parallelStream().collect(Collectors.toList()));
+    }
+
+    public String getListString(String fromPattern, String endPattern, int scanNumber) {
+        return mergeJson(getObjectMap(fromPattern, endPattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
+    }
+
+    public String getListString(String fromPattern, String endPattern) {
+        return mergeJson(getObjectMap(fromPattern, endPattern, defaultScanNumber).values().parallelStream().collect(Collectors.toList()));
+    }
+
+    public <T> List<T> getObjects(String pattern, int scanNumber, Class<T> clazz) {
+        return JSON.parseArray(getListString(pattern, scanNumber), clazz);
+    }
+
+    public <T> List<T> getObjects(String pattern, Class<T> clazz) {
+        return getObjects(pattern, defaultScanNumber, clazz);
+    }
+
+    public <T> List<T> getObjects(String fromPattern, String endPattern, int scanNumber, Class<T> clazz) {
+        return JSON.parseArray(getListString(fromPattern, endPattern, scanNumber), clazz);
+    }
+
+    public <T> List<T> getObjects(String fromPattern, String endPattern, Class<T> clazz) {
+        return getObjects(fromPattern, endPattern, defaultScanNumber, clazz);
     }
 
     public int count(String pattern, int scanNumber) {
-        return getMapString(pattern, scanNumber).size();
-    }
-
-    public <T> List<T> getObjects(String pattern, Class<T> clazz, Feature... features) {
-        return getObjects(pattern, defaultScanNumber, clazz, features);
-    }
-
-    public <T> List<T> getObjects(String fromPattern, String endPattern, Class<T> clazz, Feature... features) {
-        return getObjects(fromPattern, endPattern, defaultScanNumber, clazz, features);
+        return getObjectMap(pattern, scanNumber).size();
     }
 
     public int count(String pattern) {

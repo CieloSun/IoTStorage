@@ -13,3 +13,5 @@ ssdb-common:
 fdfs:
   assign-group: false
   group: group2
+archive:
+  keys: [device_]

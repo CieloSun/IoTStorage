@@ -33,16 +33,6 @@ public class FDFS implements CommandLineRunner {
         storageClient = new StorageClient();
     }
 
-    public String upload(List<String> jsonObjects) throws Exception {
-        StringBuilder stringBuilder = new StringBuilder("[");
-        IntStream.range(0, jsonObjects.size()).forEach(i -> {
-            stringBuilder.append(jsonObjects.get(i));
-            if (i < jsonObjects.size() - 1) stringBuilder.append(",");
-        });
-        stringBuilder.append("]");
-        return upload(stringBuilder.toString());
-    }
-
     public String upload(String content) throws Exception {
         return upload(content.getBytes());
     }
