@@ -9,3 +9,7 @@ ssdb-common:
   host: 125.216.242.71
   port: 42870
   init: true
+  scan-number: 10000
+fdfs:
+  assign-group: false
+  group: group2

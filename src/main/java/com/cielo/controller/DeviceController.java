@@ -1,6 +1,7 @@
 package com.cielo.controller;
 
 
+import com.cielo.fastdfs.FDFS;
 import com.cielo.model.DeviceModel;
 import com.cielo.service.DeviceService;
 import org.springframework.beans.factory.annotation.Autowired;

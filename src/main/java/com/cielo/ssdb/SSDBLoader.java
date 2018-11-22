@@ -54,7 +54,7 @@ public class SSDBLoader implements CommandLineRunner {
     private boolean lifo;
     @Value("false")
     private boolean init;
-    @Value("999")
+    @Value("1000")
     private int scanNumber;
 
     @Autowired
