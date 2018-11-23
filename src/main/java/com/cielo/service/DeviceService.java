@@ -1,35 +1,41 @@
 package com.cielo.service;
 
 import com.cielo.model.DeviceModel;
-import com.cielo.ssdb.SSDBUtil;
+import com.cielo.storage.ArchiveUtil;
+import com.cielo.storage.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class DeviceService {
     @Autowired
     private SSDBUtil ssdbUtil;
+    @Autowired
+    private ArchiveUtil archiveUtil;
 
     public String pattern(String deviceId, Integer functionId) {
-        return "device_" + deviceId + "_" + functionId + "_";
+        return "device_" + functionId + "_" + deviceId;
     }
 
-    public String key(DeviceModel deviceModel) {
-        return "device_" + deviceModel.getDeviceId() + "_" + deviceModel.getFunctionId() + "_" + deviceModel.getDate();
+    private String key(DeviceModel deviceModel) {
+        return "device_" + deviceModel.getFunctionId() + "_" + deviceModel.getDeviceId() + "_" + deviceModel.getDate();
     }
 
-    public String key(String deviceId, Integer functionId, Long date) {
-        return "device_" + deviceId + "_" + functionId + "_" + date;
+    private String key(String deviceId, Integer functionId, Long date) {
+        return "device_" + functionId + "_" + deviceId + "_" + date;
     }
 
-    public String latest(DeviceModel deviceModel) {
-        return "latest_device_" + deviceModel.getDeviceId() + "_" + deviceModel.getFunctionId();
+    private String latest(DeviceModel deviceModel) {
+        return "latest_device_" + deviceModel.getFunctionId() + "_" + deviceModel.getDeviceId();
     }
 
-    public String latest(String deviceId, Integer functionId) {
-        return "latest_device_" + deviceId + "_" + functionId;
+    private String latest(String deviceId, Integer functionId) {
+        return "latest_device_" + functionId + "_" + deviceId;
     }
 
     public void saveDeviceInfo(DeviceModel deviceModel) {
@@ -44,22 +50,27 @@ public class DeviceService {
         return ssdbUtil.get(latest(deviceId, functionId), DeviceModel.class);
     }
 
-    public String getLatestDeviceInfoKey(String deviceId, Integer functionId) {
-        return key(getLatestDeviceInfo(deviceId, functionId));
-    }
-
-    public List<DeviceModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate) {
+    public Set<DeviceModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate) {
         return getDeviceInfoByTime(deviceId, functionId, startDate, System.currentTimeMillis());
     }
 
-    public List<DeviceModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) {
-        if (endDate == null) {
-            endDate = System.currentTimeMillis();
-        }
-        return ssdbUtil.getObjects(key(deviceId, functionId, startDate), key(deviceId, functionId, endDate), DeviceModel.class);
+    public Set<DeviceModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) {
+        Set<DeviceModel> values = new HashSet<>();
+        if (archiveUtil.getLatestArchiveDate(pattern(deviceId, functionId)) < endDate)
+            values.addAll(ssdbUtil.getMapValues(key(deviceId, functionId, startDate), key(deviceId, functionId, endDate), DeviceModel.class));
+        if (archiveUtil.getLatestArchiveDate(pattern(deviceId, functionId)) > startDate)
+            values.addAll(archiveUtil.getObjects(pattern(deviceId, functionId), startDate, endDate, DeviceModel.class)
+                    .parallelStream().filter(deviceModel -> deviceModel.getDate() >= startDate && deviceModel.getDate() <= endDate).sorted().collect(Collectors.toList()));
+        return values;
     }
 
-    public DeviceModel getDeviceInfo(String deviceId, Integer functionId, Long date) {
-        return ssdbUtil.get(key(deviceId, functionId, date), DeviceModel.class);
+    public DeviceModel getDeviceInfo(String deviceId, Integer functionId, Long date) throws Exception {
+        if (archiveUtil.getLatestArchiveDate(pattern(deviceId, functionId)) <= date)
+            return ssdbUtil.get(key(deviceId, functionId, date), DeviceModel.class);
+        else {
+            Optional<DeviceModel> optional = archiveUtil.getObjects(pattern(deviceId, functionId), date, DeviceModel.class).parallelStream().filter(deviceModel -> deviceModel.getDate() == date).findAny();
+            if (optional.isPresent()) return optional.get();
+            else throw new Exception("Cannot find info.");
+        }
     }
 }

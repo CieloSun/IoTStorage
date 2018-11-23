@@ -1,13 +1,12 @@
 package com.cielo.controller;
 
 
-import com.cielo.fastdfs.FDFS;
 import com.cielo.model.DeviceModel;
 import com.cielo.service.DeviceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Set;
 
 @RestController
 @CrossOrigin
@@ -27,7 +26,7 @@ public class DeviceController {
     }
 
     @GetMapping({"token"})
-    public List<DeviceModel> getDeviceInfo(@PathVariable String token, String deviceId, Integer function, Long startTime, @RequestParam(required = false) Long endTime) {
+    public Set<DeviceModel> getDeviceInfo(@PathVariable String token, String deviceId, Integer function, Long startTime, @RequestParam(required = false) Long endTime) {
         return deviceService.getDeviceInfoByTime(deviceId, function, startTime, endTime);
     }
 

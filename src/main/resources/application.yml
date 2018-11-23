@@ -2,16 +2,15 @@ server:
   port: 42000
   tomcat:
     uri-encoding: utf-8
-ssdb-local:
-  host: 125.216.242.71
-  port: 42880
-ssdb-common:
+
+ssdb:
   host: 125.216.242.71
   port: 42870
-  init: true
   scan-number: 10000
+
 fdfs:
   assign-group: false
   group: group2
-archive:
-  keys: [device_]
+
+init:
+  init-database: true

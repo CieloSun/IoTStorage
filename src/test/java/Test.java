@@ -1,22 +1,13 @@
 import com.alibaba.fastjson.JSON;
 import com.cielo.model.User;
+import com.cielo.storage.JSONUtil;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.IntStream;
 
 public class Test {
 
-    public static String mergeJson(List<String> jsonObjects){
-        StringBuilder stringBuilder = new StringBuilder("[");
-        IntStream.range(0, jsonObjects.size()).forEach(i -> {
-            stringBuilder.append(jsonObjects.get(i));
-            if (i < jsonObjects.size() - 1) stringBuilder.append(",");
-        });
-        stringBuilder.append("]");
-        return stringBuilder.toString();
-    }
     public static void main(String[] args) {
 //        System.out.println(System.currentTimeMillis());
 //        Date date = new Date(System.currentTimeMillis());
@@ -31,13 +22,23 @@ public class Test {
 //        System.out.println(strings[0]);
 //        System.out.println(strings[1]);
 //        System.out.println(JSON.toJSONString(strings));
-        List<String> list=new ArrayList<>();
+        List<String> list = new ArrayList<>();
         list.add(JSON.toJSONString(new User("Cielo", "0928", 0)));
         list.add(JSON.toJSONString(new User("Boris", "0928", 0)));
-        String s = mergeJson(list);
+        String s = JSONUtil.merge(list);
         List<User> users = JSON.parseArray(s, User.class);
         System.out.println(users.get(0));
         System.out.println(users.get(1));
+        list.clear();
+        list.add(s);
+        list.add(s);
+        s=JSONUtil.mergeList(list);
+        System.out.println(s);
+        users = JSON.parseArray(s, User.class);
+        System.out.println(users.get(0));
+        System.out.println(users.get(1));
+        System.out.println(users.get(2));
+        System.out.println(users.get(3));
 
     }
 }

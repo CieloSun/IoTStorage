@@ -10,6 +10,7 @@ public class Role {
     public static final int GUEST = 1;
     private Integer roleId;
     private Set<Integer> permissions;
+
     public Role(Integer roleId, Set<Integer> permissions) {
         this.roleId = roleId;
         this.permissions = permissions;

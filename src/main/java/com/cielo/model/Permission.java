@@ -10,6 +10,7 @@ public class Permission {
     public static final int SHOW_PERMISSION = 3;
     private Integer permissionId;
     private String remark;
+
     public Permission(Integer permissionId, String remark) {
         this.permissionId = permissionId;
         this.remark = remark;

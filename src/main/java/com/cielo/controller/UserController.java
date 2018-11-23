@@ -4,7 +4,7 @@ import com.cielo.model.Permission;
 import com.cielo.model.Role;
 import com.cielo.model.User;
 import com.cielo.service.UserService;
-import com.cielo.ssdb.SSDBUtil;
+import com.cielo.storage.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -77,7 +77,7 @@ public class UserController {
     @GetMapping("admin/permission/{token}")
     public List<Permission> showAllPermission(@PathVariable String token) throws Exception {
         userService.authPermission(token, Permission.GET_USER);
-        return ssdbUtil.getObjects("permission_", Permission.class);
+        return ssdbUtil.getMapValues("permission_", Permission.class);
     }
 
     @PostMapping("admin/role/{token}")

@@ -1,6 +1,6 @@
 package com.cielo.controller;
 
-import com.cielo.fastdfs.FDFS;
+import com.cielo.storage.FDFSUtil;
 import org.csource.fastdfs.FileInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -11,20 +11,20 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin
 public class TestController {
     @Autowired
-    private FDFS fdfs;
+    private FDFSUtil fdfsUtil;
 
     @GetMapping("upload")
     public String upload(String upString) throws Exception {
-        return fdfs.upload(upString);
+        return fdfsUtil.upload(upString);
     }
 
     @GetMapping("download")
     public String download(String path) throws Exception {
-        return fdfs.download(path);
+        return fdfsUtil.download(path);
     }
 
     @GetMapping("info")
     public FileInfo getFileInfo(String path) throws Exception {
-        return fdfs.info(path);
+        return fdfsUtil.info(path);
     }
 }

@@ -7,8 +7,10 @@ public class User {
     private String username;
     private String password;
     private Integer roleId;
+
     public User() {
     }
+
     public User(String username, String password, Integer roleId) {
         this.username = username;
         this.password = password;
