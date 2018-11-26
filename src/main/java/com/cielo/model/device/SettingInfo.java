@@ -1,10 +1,10 @@
-package com.cielo.model;
+package com.cielo.model.device;
 
 import lombok.Data;
 
 @Data
-//典型的需与路灯交互的配置类
-public class DeviceSetting {
+//典型的需与路灯交互的配置类,需人工配置，配置后很少修改
+public class SettingInfo {
     private double maxI;
     private double minI;
     private double maxV;

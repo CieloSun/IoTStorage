@@ -42,13 +42,11 @@ public class ArchiveUtil {
 
     public <T> List<T> getObjects(String pattern, Long date, Class<T> clazz) throws Exception {
         List<Long> dates = ssdbUtil.getMapKeys(filePattern(pattern)).parallelStream().map(key -> getDateFromKey(key)).sorted().collect(Collectors.toList());
-        int index = Tools.lowerBound(dates, date);
-        String fileKey = key(pattern, dates.get(index));
-        return fdfsUtil.download(fileKey, clazz);
+        return fdfsUtil.download(key(pattern, dates.get(CollectionUtil.lowerBound(dates, date))), clazz);
     }
 
     public <T> List<T> getObjects(String pattern, Long startDate, Long endDate, Class<T> clazz) {
         List<Long> dates = ssdbUtil.getMapKeys(filePattern(pattern)).parallelStream().map(key -> getDateFromKey(key)).filter(fileDate -> fileDate >= startDate).sorted().collect(Collectors.toList());
-        return JSONUtil.mergeList(dates.subList(0, Tools.lowerBound(dates, endDate)).parallelStream().map(Try.of(date -> fdfsUtil.download(key(pattern, date)))).collect(Collectors.toList()), clazz);
+        return JSONUtil.mergeList(dates.subList(0, CollectionUtil.lowerBound(dates, endDate)).parallelStream().map(Try.of(date -> fdfsUtil.download(key(pattern, date)))).collect(Collectors.toList()), clazz);
     }
 }

@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-//@EnableConfigurationProperties(SSDBConfig.class)
 public class SSDBUtil {
     @Autowired
     private SSDBConfig ssdbConfig;
@@ -28,14 +27,6 @@ public class SSDBUtil {
         return getMap(pattern, ssdbConfig.getScanNumber());
     }
 
-    private Map<String, String> getMap(String pattern, int scanNumber) {
-        return getMap(pattern, pattern + '}', scanNumber);
-    }
-
-    private Map<String, String> popMap(String pattern, int scanNumber) {
-        return popMap(pattern, pattern + '}', scanNumber);
-    }
-
     private Map<String, String> getMap(String fromPattern, String endPattern, int scanNumber) {
         return ssdb.scan(fromPattern, endPattern, scanNumber).mapString();
     }
@@ -46,7 +37,29 @@ public class SSDBUtil {
         return map;
     }
 
+    private Map<String, String> getMap(String pattern, int scanNumber) {
+        return getMap(pattern, pattern + '}', scanNumber);
+    }
 
+    private Map<String, String> popMap(String pattern, int scanNumber) {
+        return popMap(pattern, pattern + '}', scanNumber);
+    }
+
+    private String getMapValues(String pattern, int scanNumber) {
+        return JSONUtil.merge(getMap(pattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
+    }
+
+    private String popMapValues(String pattern, int scanNumber) {
+        return JSONUtil.merge(popMap(pattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
+    }
+
+    private <T> List<T> getMapValues(String pattern, int scanNumber, Class<T> clazz) {
+        return JSON.parseArray(getMapValues(pattern, scanNumber), clazz);
+    }
+
+    private int count(String pattern, int scanNumber) {
+        return getMap(pattern, scanNumber).size();
+    }
 
     public Response setVal(String key, Object val) {
         return ssdb.set(key, val);
@@ -60,21 +73,63 @@ public class SSDBUtil {
         return ssdb.setx(key, JSON.toJSONString(val), ttl);
     }
 
+    public Response hsetVal(String name, String key, Object val) {
+        return ssdb.hset(name, key, val);
+    }
+
+    public Response hset(String name, String key, Object val) {
+        return ssdb.hset(name, key, JSON.toJSONString(val));
+    }
+
     public Response get(String key) {
         return ssdb.get(key);
     }
+
+    public Response hget(String name, String key) {
+        return ssdb.hget(name, key);
+    }
+
+    public Response multiHget(String name, String... keys) {
+        return ssdb.multi_hget(name, keys);
+    }
+
+    public <T> List<T> multiHget(Class<T> clazz, String name, String... keys) {
+        return JSON.parseArray(JSONUtil.merge(ssdb.multi_hget(name, keys).mapString().values().parallelStream().collect(Collectors.toList())), clazz);
+    }
+
+    public <T> T hget(String name, String key, Class<T> clazz, Feature... features) {
+        return JSON.parseObject(hget(name, key).asString(), clazz, features);
+    }
+
+    public Response hgetall(String name) {
+        return ssdb.hgetall(name);
+    }
+
+    public List<String> hgetallKeys(String name) {
+        return ssdb.hgetall(name).mapString().keySet().parallelStream().collect(Collectors.toList());
+    }
+
+    public <T> List<T> hgetall(String name, Class<T> clazz) {
+        return JSON.parseArray(JSONUtil.merge(ssdb.hgetall(name).mapString().values().parallelStream().collect(Collectors.toList())), clazz);
+    }
+
+    public Response hdel(String name, String key) {
+        return ssdb.hdel(name, key);
+    }
+
+    public Integer hsize(String name) {
+        return ssdb.hsize(name).asInt();
+    }
+
+    public boolean hexists(String name, String key) {
+        return ssdb.hexists(name, key).asInt() != 0;
+    }
+
 
     public <T> T get(String key, Class<T> clazz, Feature... features) {
         return JSON.parseObject(get(key).asString(), clazz, features);
     }
 
-    public String getMapValues(String pattern, int scanNumber) {
-        return JSONUtil.merge(getMap(pattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
-    }
-
-    public String popMapValues(String pattern, int scanNumber) {
-        return JSONUtil.merge(popMap(pattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
-    }
 
     public String getMapValues(String pattern) {
         return JSONUtil.merge(getMap(pattern, ssdbConfig.getScanNumber()).values().parallelStream().collect(Collectors.toList()));
@@ -96,10 +151,6 @@ public class SSDBUtil {
         return getMap(pattern).keySet();
     }
 
-    public <T> List<T> getMapValues(String pattern, int scanNumber, Class<T> clazz) {
-        return JSON.parseArray(getMapValues(pattern, scanNumber), clazz);
-    }
-
     public <T> List<T> getMapValues(String pattern, Class<T> clazz) {
         return getMapValues(pattern, ssdbConfig.getScanNumber(), clazz);
     }
@@ -112,10 +163,6 @@ public class SSDBUtil {
         return getMapValues(fromPattern, endPattern, ssdbConfig.getScanNumber(), clazz);
     }
 
-    public int count(String pattern, int scanNumber) {
-        return getMap(pattern, scanNumber).size();
-    }
-
     public int count(String pattern) {
         return count(pattern, ssdbConfig.getScanNumber());
     }
@@ -126,6 +173,10 @@ public class SSDBUtil {
 
     public Response del(String key) {
         return ssdb.del(key);
+    }
+
+    public Response multiDel(String pattern) {
+        return ssdb.multi_del(getMapKeys(pattern).toArray());
     }
 
     @Async

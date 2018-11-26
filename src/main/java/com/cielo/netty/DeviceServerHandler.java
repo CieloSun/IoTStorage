@@ -1,7 +1,7 @@
 package com.cielo.netty;
 
 import com.alibaba.fastjson.JSON;
-import com.cielo.model.DeviceModel;
+import com.cielo.model.device.DeviceInfoModel;
 import com.cielo.service.DeviceService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -22,21 +22,21 @@ public class DeviceServerHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        DeviceModel deviceModel = JSON.parseObject(msg, DeviceModel.class);
-        String deviceId = deviceModel.getDeviceId();
+        DeviceInfoModel deviceInfoModel = JSON.parseObject(msg, DeviceInfoModel.class);
+        String deviceId = deviceInfoModel.getDeviceId();
         deviceManager.set(deviceId, ctx.channel());
-        switch (deviceModel.getFunctionId()) {
-            case DeviceModel.HEARTBEAT:
-                deviceModel.setDate(System.currentTimeMillis());
-                deviceManager.sendObject(deviceId, deviceModel);
-            case DeviceModel.ELECTRICITY:
+        switch (deviceInfoModel.getFunctionId()) {
+            case DeviceInfoModel.HEARTBEAT:
+                deviceInfoModel.setDate(System.currentTimeMillis());
+                deviceManager.sendObject(deviceId, deviceInfoModel);
+            case DeviceInfoModel.ELECTRICITY:
                 //存储信息包
-                deviceService.saveDeviceInfo(deviceModel);
+                deviceService.saveDeviceInfo(deviceInfoModel);
                 //TODO 处理信息
                 //回复终端
-                deviceModel.setContext(null);
-                deviceModel.setDate(System.currentTimeMillis());
-                deviceManager.sendObject(deviceId, deviceModel);
+                deviceInfoModel.setContext(null);
+                deviceInfoModel.setDate(System.currentTimeMillis());
+                deviceManager.sendObject(deviceId, deviceInfoModel);
                 break;
         }
     }

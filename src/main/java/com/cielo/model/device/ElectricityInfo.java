@@ -1,10 +1,10 @@
-package com.cielo.model;
+package com.cielo.model.device;
 
 import lombok.Data;
 
 @Data
 //典型的路灯上报信息类
-public class DeviceElectricity {
+public class ElectricityInfo {
     private double i;//当前电流
     private double rate;//当前亮度
     private double v;//当前电压

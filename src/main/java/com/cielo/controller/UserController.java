@@ -1,8 +1,8 @@
 package com.cielo.controller;
 
-import com.cielo.model.Permission;
-import com.cielo.model.Role;
-import com.cielo.model.User;
+import com.cielo.model.user.Permission;
+import com.cielo.model.user.Role;
+import com.cielo.model.user.User;
 import com.cielo.service.UserService;
 import com.cielo.storage.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,11 +39,6 @@ public class UserController {
         } else throw new AuthenticationException("Username does not exist.");
     }
 
-    @DeleteMapping("token/{token}")
-    public void logout(@PathVariable String token) {
-        userService.deleteToken(token);
-    }
-
     @GetMapping("{token}")
     public User getUser(@PathVariable String token) throws Exception {
         return userService.getUser(token);
@@ -57,6 +52,13 @@ public class UserController {
         ssdbUtil.set(User.key(user.getUsername()), user);
         return userService.generateToken(user);
     }
+
+    @DeleteMapping("token/{token}")
+    public void logout(@PathVariable String token) {
+        userService.deleteToken(token);
+    }
+
+
 
     @GetMapping("role/{token}")
     public Role getRole(@PathVariable String token) throws Exception {

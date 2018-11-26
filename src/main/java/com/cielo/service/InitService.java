@@ -1,8 +1,8 @@
 package com.cielo.service;
 
-import com.cielo.model.Permission;
-import com.cielo.model.Role;
-import com.cielo.model.User;
+import com.cielo.model.user.Permission;
+import com.cielo.model.user.Role;
+import com.cielo.model.user.User;
 import com.cielo.storage.SSDBUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +29,8 @@ public class InitService implements CommandLineRunner {
 
     //生成数据库初始数据
     public void initDatabase() {
+        //清空数据库
+        ssdbUtil.multiDel("");
         //初始化权限
         ssdbUtil.set(Permission.key(Permission.EDIT_ROLE), new Permission(Permission.EDIT_ROLE, "edit permission"));
         ssdbUtil.set(Permission.key(Permission.EDIT_USER), new Permission(Permission.EDIT_USER, "edit user"));
@@ -41,6 +43,8 @@ public class InitService implements CommandLineRunner {
                 add(Permission.GET_USER);
                 add(Permission.EDIT_USER);
                 add(Permission.SHOW_PERMISSION);
+                add(Permission.GET_ALL_DEVICE);
+                add(Permission.EDIT_DEVICE);
             }
         }));
         //初始化普通用户角色

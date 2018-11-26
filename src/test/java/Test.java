@@ -1,10 +1,9 @@
 import com.alibaba.fastjson.JSON;
-import com.cielo.model.User;
+import com.cielo.model.user.User;
 import com.cielo.storage.JSONUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 
 public class Test {
 

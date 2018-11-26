@@ -1,18 +1,21 @@
 package com.cielo.service;
 
-import com.cielo.model.DeviceModel;
+import com.cielo.model.device.Device;
+import com.cielo.model.device.DeviceInfoModel;
 import com.cielo.storage.ArchiveUtil;
 import com.cielo.storage.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class DeviceService {
+    public static final String DEVICE = "config_device";
     @Autowired
     private SSDBUtil ssdbUtil;
     @Autowired
@@ -22,53 +25,77 @@ public class DeviceService {
         return "device_" + functionId + "_" + deviceId;
     }
 
-    private String key(DeviceModel deviceModel) {
-        return "device_" + deviceModel.getFunctionId() + "_" + deviceModel.getDeviceId() + "_" + deviceModel.getDate();
+    private String key(DeviceInfoModel deviceInfoModel) {
+        return "device_" + deviceInfoModel.getFunctionId() + "_" + deviceInfoModel.getDeviceId() + "_" + deviceInfoModel.getDate();
     }
 
     private String key(String deviceId, Integer functionId, Long date) {
         return "device_" + functionId + "_" + deviceId + "_" + date;
     }
 
-    private String latest(DeviceModel deviceModel) {
-        return "latest_device_" + deviceModel.getFunctionId() + "_" + deviceModel.getDeviceId();
+    private String latest(DeviceInfoModel deviceInfoModel) {
+        return "latest_device_" + deviceInfoModel.getFunctionId() + "_" + deviceInfoModel.getDeviceId();
     }
 
     private String latest(String deviceId, Integer functionId) {
         return "latest_device_" + functionId + "_" + deviceId;
     }
 
-    public void saveDeviceInfo(DeviceModel deviceModel) {
-        if (deviceModel.getDate() == null) {
-            deviceModel.setDate(System.currentTimeMillis());
+    public void editDevice(Device device) {
+        ssdbUtil.hset(DEVICE, device.getDeviceId(), device);
+    }
+
+    public void deleteDevice(String deviceId) {
+        ssdbUtil.hdel(DEVICE, deviceId);
+    }
+
+    public Device getDevice(String deviceId) {
+        return ssdbUtil.hget(DEVICE, deviceId, Device.class);
+    }
+
+    public List<String> getAllDeviceId() {
+        return ssdbUtil.hgetallKeys(DEVICE);
+    }
+
+    public List<Device> getAllDevice() {
+        return ssdbUtil.hgetall(DEVICE, Device.class);
+    }
+
+    public List<Device> getDevices(String... keys) {
+        return ssdbUtil.multiHget(Device.class, DEVICE, keys);
+    }
+
+    public void saveDeviceInfo(DeviceInfoModel deviceInfoModel) {
+        if (deviceInfoModel.getDate() == null) {
+            deviceInfoModel.setDate(System.currentTimeMillis());
         }
-        ssdbUtil.set(key(deviceModel), deviceModel);
-        ssdbUtil.set(latest(deviceModel), deviceModel);
+        ssdbUtil.set(key(deviceInfoModel), deviceInfoModel);
+        ssdbUtil.set(latest(deviceInfoModel), deviceInfoModel);
     }
 
-    public DeviceModel getLatestDeviceInfo(String deviceId, Integer functionId) {
-        return ssdbUtil.get(latest(deviceId, functionId), DeviceModel.class);
+    public DeviceInfoModel getLatestDeviceInfo(String deviceId, Integer functionId) {
+        return ssdbUtil.get(latest(deviceId, functionId), DeviceInfoModel.class);
     }
 
-    public Set<DeviceModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate) {
+    public Set<DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate) {
         return getDeviceInfoByTime(deviceId, functionId, startDate, System.currentTimeMillis());
     }
 
-    public Set<DeviceModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) {
-        Set<DeviceModel> values = new HashSet<>();
+    public Set<DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) {
+        Set<DeviceInfoModel> values = new HashSet<>();
         if (archiveUtil.getLatestArchiveDate(pattern(deviceId, functionId)) < endDate)
-            values.addAll(ssdbUtil.getMapValues(key(deviceId, functionId, startDate), key(deviceId, functionId, endDate), DeviceModel.class));
+            values.addAll(ssdbUtil.getMapValues(key(deviceId, functionId, startDate), key(deviceId, functionId, endDate), DeviceInfoModel.class));
         if (archiveUtil.getLatestArchiveDate(pattern(deviceId, functionId)) > startDate)
-            values.addAll(archiveUtil.getObjects(pattern(deviceId, functionId), startDate, endDate, DeviceModel.class)
-                    .parallelStream().filter(deviceModel -> deviceModel.getDate() >= startDate && deviceModel.getDate() <= endDate).sorted().collect(Collectors.toList()));
+            values.addAll(archiveUtil.getObjects(pattern(deviceId, functionId), startDate, endDate, DeviceInfoModel.class)
+                    .parallelStream().filter(deviceInfoModel -> deviceInfoModel.getDate() >= startDate && deviceInfoModel.getDate() <= endDate).sorted().collect(Collectors.toList()));
         return values;
     }
 
-    public DeviceModel getDeviceInfo(String deviceId, Integer functionId, Long date) throws Exception {
+    public DeviceInfoModel getDeviceInfo(String deviceId, Integer functionId, Long date) throws Exception {
         if (archiveUtil.getLatestArchiveDate(pattern(deviceId, functionId)) <= date)
-            return ssdbUtil.get(key(deviceId, functionId, date), DeviceModel.class);
+            return ssdbUtil.get(key(deviceId, functionId, date), DeviceInfoModel.class);
         else {
-            Optional<DeviceModel> optional = archiveUtil.getObjects(pattern(deviceId, functionId), date, DeviceModel.class).parallelStream().filter(deviceModel -> deviceModel.getDate() == date).findAny();
+            Optional<DeviceInfoModel> optional = archiveUtil.getObjects(pattern(deviceId, functionId), date, DeviceInfoModel.class).parallelStream().filter(deviceInfoModel -> deviceInfoModel.getDate() == date).findAny();
             if (optional.isPresent()) return optional.get();
             else throw new Exception("Cannot find info.");
         }

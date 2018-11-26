@@ -8,7 +8,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class Tools {
+public class CollectionUtil {
     public static  <T> int lowerBound(List<? extends Comparable<? super T>> list, T key) {
         int low = 0;
         int high = list.size() - 1;

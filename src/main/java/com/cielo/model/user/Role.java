@@ -1,4 +1,4 @@
-package com.cielo.model;
+package com.cielo.model.user;
 
 import lombok.Data;
 
