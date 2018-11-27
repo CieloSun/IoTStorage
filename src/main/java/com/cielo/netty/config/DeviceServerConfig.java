@@ -1,4 +1,4 @@
-package com.cielo.netty;
+package com.cielo.netty.config;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;

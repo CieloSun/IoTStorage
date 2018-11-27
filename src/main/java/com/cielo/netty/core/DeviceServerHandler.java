@@ -1,8 +1,8 @@
-package com.cielo.netty;
+package com.cielo.netty.core;
 
 import com.alibaba.fastjson.JSON;
 import com.cielo.model.device.DeviceInfoModel;
-import com.cielo.service.DeviceService;
+import com.cielo.service.core.DeviceService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;

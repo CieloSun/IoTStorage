@@ -1,6 +1,6 @@
 package com.cielo.aspects;
 
-import com.cielo.service.UserService;
+import com.cielo.service.core.UserService;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;

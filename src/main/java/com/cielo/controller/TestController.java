@@ -1,17 +1,22 @@
 package com.cielo.controller;
 
-import com.cielo.storage.FDFSUtil;
+import com.cielo.service.scheduled.DeviceScheduled;
+import com.cielo.storage.core.FDFSUtil;
 import org.csource.fastdfs.FileInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @CrossOrigin
+@RequestMapping("test")
 public class TestController {
     @Autowired
     private FDFSUtil fdfsUtil;
+    @Autowired
+    private DeviceScheduled deviceScheduled;
 
     @GetMapping("upload")
     public String upload(String upString) throws Exception {
@@ -27,4 +32,13 @@ public class TestController {
     public FileInfo getFileInfo(String path) throws Exception {
         return fdfsUtil.info(path);
     }
+
+    @GetMapping("archive")
+    public void archive(){
+        deviceScheduled.archive();
+    }
+
+
+
+
 }

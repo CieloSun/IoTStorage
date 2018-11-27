@@ -1,6 +1,7 @@
-package com.cielo.storage;
+package com.cielo.storage.core;
 
 import com.alibaba.fastjson.JSON;
+import com.cielo.storage.config.FDFSConfig;
 import org.csource.fastdfs.ClientGlobal;
 import org.csource.fastdfs.FileInfo;
 import org.csource.fastdfs.StorageClient;

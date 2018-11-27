@@ -1,4 +1,4 @@
-package com.cielo.service;
+package com.cielo.storage.config;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties("init")
-public class InitConfig {
-    @Value("false")
-    private boolean initDatabase;
+@ConfigurationProperties("archive")
+public class ArchiveConfig {
+    @Value("0")
+    private Integer leastNumber;
 }

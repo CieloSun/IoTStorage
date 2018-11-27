@@ -1,7 +1,9 @@
-package com.cielo.storage;
+package com.cielo.storage.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
+import com.cielo.storage.config.SSDBConfig;
+import com.cielo.storage.tool.JSONUtil;
 import org.nutz.ssdb4j.spi.Response;
 import org.nutz.ssdb4j.spi.SSDB;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +21,6 @@ public class SSDBUtil {
     private SSDBConfig ssdbConfig;
     private SSDB ssdb;
 
-    public void init(SSDB ssdb) {
-        this.ssdb = ssdb;
-    }
-
     private Map<String, String> getMap(String pattern) {
         return getMap(pattern, ssdbConfig.getScanNumber());
     }
@@ -31,34 +29,43 @@ public class SSDBUtil {
         return ssdb.scan(fromPattern, endPattern, scanNumber).mapString();
     }
 
-    private Map<String, String> popMap(String fromPattern, String endPattern, int scanNumber) {
-        Map<String, String> map = ssdb.scan(fromPattern, endPattern, scanNumber).mapString();
-        multiDel(map.keySet().toArray());
-        return map;
-    }
-
     private Map<String, String> getMap(String pattern, int scanNumber) {
         return getMap(pattern, pattern + '}', scanNumber);
-    }
-
-    private Map<String, String> popMap(String pattern, int scanNumber) {
-        return popMap(pattern, pattern + '}', scanNumber);
     }
 
     private String getMapValues(String pattern, int scanNumber) {
         return JSONUtil.merge(getMap(pattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
     }
 
-    private String popMapValues(String pattern, int scanNumber) {
-        return JSONUtil.merge(popMap(pattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
+
+    private String getMapValues(String fromPattern, String endPattern, int scanNumber) {
+        return JSONUtil.merge(getMap(fromPattern, endPattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
     }
 
     private <T> List<T> getMapValues(String pattern, int scanNumber, Class<T> clazz) {
         return JSON.parseArray(getMapValues(pattern, scanNumber), clazz);
     }
 
+    private <T> List<T> getMapValues(String fromPattern, String endPattern, int scanNumber, Class<T> clazz) {
+        return JSON.parseArray(getMapValues(fromPattern, endPattern, scanNumber), clazz);
+    }
+
+    private Map<String, String> popMap(String fromPattern, String endPattern, int scanNumber) {
+        Map<String, String> map = ssdb.scan(fromPattern, endPattern, scanNumber).mapString();
+        multiDel(map.keySet().toArray());
+        return map;
+    }
+
+    private Map<String, String> popMap(String pattern, int scanNumber) {
+        return popMap(pattern, pattern + '}', scanNumber);
+    }
+
     private int count(String pattern, int scanNumber) {
         return getMap(pattern, scanNumber).size();
+    }
+
+    public void init(SSDB ssdb) {
+        this.ssdb = ssdb;
     }
 
     public Response setVal(String key, Object val) {
@@ -135,13 +142,6 @@ public class SSDBUtil {
         return JSONUtil.merge(getMap(pattern, ssdbConfig.getScanNumber()).values().parallelStream().collect(Collectors.toList()));
     }
 
-    public String popMapValues(String pattern) {
-        return JSONUtil.merge(popMap(pattern, ssdbConfig.getScanNumber()).values().parallelStream().collect(Collectors.toList()));
-    }
-
-    public String getMapValues(String fromPattern, String endPattern, int scanNumber) {
-        return JSONUtil.merge(getMap(fromPattern, endPattern, scanNumber).values().parallelStream().collect(Collectors.toList()));
-    }
 
     public String getMapValues(String fromPattern, String endPattern) {
         return JSONUtil.merge(getMap(fromPattern, endPattern, ssdbConfig.getScanNumber()).values().parallelStream().collect(Collectors.toList()));
@@ -155,12 +155,14 @@ public class SSDBUtil {
         return getMapValues(pattern, ssdbConfig.getScanNumber(), clazz);
     }
 
-    public <T> List<T> getMapValues(String fromPattern, String endPattern, int scanNumber, Class<T> clazz) {
-        return JSON.parseArray(getMapValues(fromPattern, endPattern, scanNumber), clazz);
-    }
 
     public <T> List<T> getMapValues(String fromPattern, String endPattern, Class<T> clazz) {
         return getMapValues(fromPattern, endPattern, ssdbConfig.getScanNumber(), clazz);
+    }
+
+
+    public Map<String, String> popMap(String pattern) {
+        return popMap(pattern, ssdbConfig.getScanNumber());
     }
 
     public int count(String pattern) {

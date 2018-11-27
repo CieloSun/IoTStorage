@@ -1,5 +1,6 @@
-package com.cielo.netty;
+package com.cielo.netty.core;
 
+import com.cielo.netty.config.DeviceServerConfig;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;

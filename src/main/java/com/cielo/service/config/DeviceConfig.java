@@ -1,4 +1,4 @@
-package com.cielo.service;
+package com.cielo.service.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

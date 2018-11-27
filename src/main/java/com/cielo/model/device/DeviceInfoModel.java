@@ -12,7 +12,7 @@ public class DeviceInfoModel<T> implements Comparable<DeviceInfoModel<T>> {
     private String deviceId;
     private Integer functionId;
     private Long date;
-    private Long seriesNumber;
+    private Integer seriesNumber;
     private T context;
 
     @Override

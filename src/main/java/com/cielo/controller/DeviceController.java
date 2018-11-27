@@ -4,8 +4,8 @@ package com.cielo.controller;
 import com.cielo.model.device.Device;
 import com.cielo.model.device.DeviceInfoModel;
 import com.cielo.model.user.Permission;
-import com.cielo.service.DeviceService;
-import com.cielo.service.UserService;
+import com.cielo.service.core.DeviceService;
+import com.cielo.service.core.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

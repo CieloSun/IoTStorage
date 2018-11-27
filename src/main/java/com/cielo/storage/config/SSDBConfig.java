@@ -1,4 +1,4 @@
-package com.cielo.storage;
+package com.cielo.storage.config;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;

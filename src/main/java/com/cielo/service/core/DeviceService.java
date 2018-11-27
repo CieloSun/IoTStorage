@@ -1,9 +1,9 @@
-package com.cielo.service;
+package com.cielo.service.core;
 
 import com.cielo.model.device.Device;
 import com.cielo.model.device.DeviceInfoModel;
-import com.cielo.storage.ArchiveUtil;
-import com.cielo.storage.SSDBUtil;
+import com.cielo.storage.core.ArchiveUtil;
+import com.cielo.storage.core.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

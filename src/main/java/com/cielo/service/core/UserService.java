@@ -1,8 +1,8 @@
-package com.cielo.service;
+package com.cielo.service.core;
 
 import com.cielo.model.user.Role;
 import com.cielo.model.user.User;
-import com.cielo.storage.SSDBUtil;
+import com.cielo.storage.core.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

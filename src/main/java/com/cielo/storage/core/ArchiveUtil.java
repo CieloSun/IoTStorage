@@ -1,17 +1,27 @@
-package com.cielo.storage;
+package com.cielo.storage.core;
 
+import com.cielo.storage.config.ArchiveConfig;
+import com.cielo.storage.tool.CollectionUtil;
+import com.cielo.storage.tool.JSONUtil;
+import com.cielo.storage.tool.Try;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class ArchiveUtil {
+    Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired
     private FDFSUtil fdfsUtil;
     @Autowired
     private SSDBUtil ssdbUtil;
+    @Autowired
+    private ArchiveConfig archiveConfig;
 
     private String filePattern(String pattern) {
         return "file_" + pattern;
@@ -29,10 +39,20 @@ public class ArchiveUtil {
         return Long.parseLong(key.split("_")[2]);
     }
 
-    public void archive(String pattern) throws Exception {
+    public void archive(String pattern) {
+        logger.info("Archive program begins to run.");
         long date = System.currentTimeMillis();
         ssdbUtil.setVal(latestArchiveDateKey(pattern), date);
-        ssdbUtil.set(key(pattern, date), fdfsUtil.upload(ssdbUtil.popMapValues(pattern)));
+        String key = key(pattern, date);
+        Map<String, String> map = ssdbUtil.popMap(pattern);
+        if (map.size() <= archiveConfig.getLeastNumber()) return;
+        try {
+            String fileId = fdfsUtil.upload(JSONUtil.merge(map.values().parallelStream().collect(Collectors.toList())));
+            ssdbUtil.set(key, fileId);
+            logger.info(key + ":" + fileId + " has archived.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public Long getLatestArchiveDate(String pattern) {

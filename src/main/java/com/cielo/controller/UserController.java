@@ -3,8 +3,8 @@ package com.cielo.controller;
 import com.cielo.model.user.Permission;
 import com.cielo.model.user.Role;
 import com.cielo.model.user.User;
-import com.cielo.service.UserService;
-import com.cielo.storage.SSDBUtil;
+import com.cielo.service.core.UserService;
+import com.cielo.storage.core.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

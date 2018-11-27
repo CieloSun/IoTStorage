@@ -1,5 +1,6 @@
-package com.cielo.storage;
+package com.cielo.storage.core;
 
+import com.cielo.storage.config.SSDBConfig;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.nutz.ssdb4j.SSDBs;
 import org.springframework.beans.factory.annotation.Autowired;

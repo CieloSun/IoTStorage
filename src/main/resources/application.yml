@@ -14,3 +14,7 @@ fdfs:
 
 init:
   init-database: true
+device-config:
+  archive-function-id-list: [2]
+archive:
+  least-number: 0

@@ -1,9 +1,13 @@
-package com.cielo.service;
+package com.cielo.service.core;
 
+import com.cielo.model.device.Device;
+import com.cielo.model.device.DeviceInfoModel;
+import com.cielo.model.device.ElectricityInfo;
 import com.cielo.model.user.Permission;
 import com.cielo.model.user.Role;
 import com.cielo.model.user.User;
-import com.cielo.storage.SSDBUtil;
+import com.cielo.service.config.InitConfig;
+import com.cielo.storage.core.SSDBUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +16,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.stream.IntStream;
 
 @Service
 @Order(2)
@@ -21,6 +26,8 @@ public class InitService implements CommandLineRunner {
     private InitConfig initConfig;
     @Autowired
     private SSDBUtil ssdbUtil;
+    @Autowired
+    private DeviceService deviceService;
 
     @Override
     public void run(String... args) {
@@ -51,6 +58,29 @@ public class InitService implements CommandLineRunner {
         ssdbUtil.set(Role.key(Role.GUEST), new Role(Role.GUEST, new HashSet<>()));
         //初始化管理员用户
         ssdbUtil.set(User.key("admin"), new User("admin", "admin", Role.ADMIN));
+        //初始化一个路灯
+        deviceService.editDevice(new Device("changhe01"));
+        //初始化一些数据
+        IntStream.range(0, 10).forEach(i -> {
+            DeviceInfoModel<ElectricityInfo> deviceInfoModel = new DeviceInfoModel<>();
+            deviceInfoModel.setDeviceId("changhe01");
+            deviceInfoModel.setFunctionId(DeviceInfoModel.ELECTRICITY);
+            deviceInfoModel.setSeriesNumber(i);
+            deviceInfoModel.setDate(System.currentTimeMillis());
+            ElectricityInfo electricityInfo = new ElectricityInfo();
+            electricityInfo.setI(5);
+            electricityInfo.setRate(85);
+            electricityInfo.setRunTime(12 * 60 * 60);
+            electricityInfo.setTemperature(40);
+            electricityInfo.setV(220);
+            deviceInfoModel.setContext(electricityInfo);
+            deviceService.saveDeviceInfo(deviceInfoModel);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
         logger.info("The storage database has init");
     }
 }

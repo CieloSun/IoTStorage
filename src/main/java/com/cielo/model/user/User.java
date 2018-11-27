@@ -2,11 +2,15 @@ package com.cielo.model.user;
 
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 public class User {
     private String username;
     private String password;
     private Integer roleId;
+    private List<String> devices;
 
     public User() {
     }
@@ -15,6 +19,7 @@ public class User {
         this.username = username;
         this.password = password;
         this.roleId = roleId;
+        this.devices = new ArrayList<>();
     }
 
     public static String key(String username) {

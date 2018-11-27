@@ -1,4 +1,4 @@
-package com.cielo.netty;
+package com.cielo.netty.core;
 
 import com.alibaba.fastjson.JSON;
 import io.netty.channel.Channel;
