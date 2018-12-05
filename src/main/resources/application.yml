@@ -4,8 +4,8 @@ server:
     uri-encoding: utf-8
 
 ssdb:
-  host: 125.216.242.71
-  port: 42870
+  host: ws.cielosun.club
+  port: 32768
   scan-number: 10000
 
 fdfs:
@@ -18,3 +18,5 @@ device-config:
   archive-function-id-list: [2]
 archive:
   least-number: 0
+device-server:
+  port: 42001
