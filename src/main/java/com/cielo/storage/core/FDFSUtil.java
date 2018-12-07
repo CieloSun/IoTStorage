@@ -41,6 +41,10 @@ public class FDFSUtil implements CommandLineRunner {
         return JSON.parseArray(download(path), clazz);
     }
 
+    public <T> T downloadObject(String path, Class<T> clazz) throws Exception {
+        return JSON.parseObject(download(path), clazz);
+    }
+
     public String download(String path) throws Exception {
         return new String(downloadBytes(path));
     }

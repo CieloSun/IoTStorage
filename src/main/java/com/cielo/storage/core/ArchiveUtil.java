@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+//用于管理小数据，采用小数据合并的方式归档SSDB中数据
 @Service
 public class ArchiveUtil {
     Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -35,10 +36,12 @@ public class ArchiveUtil {
         return "latest_file_" + pattern;
     }
 
-    private Long getDateFromKey(String key) {
-        return Long.parseLong(key.split("_")[2]);
+    private Long getFileDateFromKey(String key) {
+        String[] strings = key.split("_");
+        return Long.parseLong(strings[strings.length - 1]);
     }
 
+    //小数据采用按周期归档，每次归档每个pattern整理成一个文件的方式
     public void archive(String pattern) {
         logger.info("Archive program begins to run.");
         long date = System.currentTimeMillis();
@@ -59,14 +62,23 @@ public class ArchiveUtil {
         return ssdbUtil.get(latestArchiveDateKey(pattern)).asLong();
     }
 
-
-    public <T> List<T> getObjects(String pattern, Long date, Class<T> clazz) throws Exception {
-        List<Long> dates = ssdbUtil.getMapKeys(filePattern(pattern)).parallelStream().map(key -> getDateFromKey(key)).sorted().collect(Collectors.toList());
+    public <T> List<T> get(String pattern, Long date, Class<T> clazz) throws Exception {
+        List<Long> dates = ssdbUtil.getMapKeys(filePattern(pattern)).parallelStream().map(key -> getFileDateFromKey(key)).sorted().collect(Collectors.toList());
         return fdfsUtil.download(key(pattern, dates.get(CollectionUtil.lowerBound(dates, date))), clazz);
     }
 
-    public <T> List<T> getObjects(String pattern, Long startDate, Long endDate, Class<T> clazz) {
-        List<Long> dates = ssdbUtil.getMapKeys(filePattern(pattern)).parallelStream().map(key -> getDateFromKey(key)).filter(fileDate -> fileDate >= startDate).sorted().collect(Collectors.toList());
+    public <T> List<T> get(String pattern, Long startDate, Long endDate, Class<T> clazz) {
+        List<Long> dates = ssdbUtil.getMapKeys(filePattern(pattern)).parallelStream().map(key -> getFileDateFromKey(key)).filter(fileDate -> fileDate >= startDate).sorted().collect(Collectors.toList());
         return JSONUtil.mergeList(dates.subList(0, CollectionUtil.lowerBound(dates, endDate)).parallelStream().map(Try.of(date -> fdfsUtil.download(key(pattern, date)))).collect(Collectors.toList()), clazz);
+    }
+
+    //大数据单独归档，用户手动控制，较为简单
+
+    public void archiveOne(String key) throws Exception {
+        ssdbUtil.set(key, fdfsUtil.upload(ssdbUtil.get(key).asString()));
+    }
+
+    public <T> T getOne(String key, Class<T> clazz) throws Exception {
+        return fdfsUtil.downloadObject(key, clazz);
     }
 }
