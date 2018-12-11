@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-//用于管理小数据，采用小数据合并的方式归档SSDB中数据
+//用于管理较小value，采用小数据合并的方式归档SSDB中数据
 @Service
 public class ArchiveUtil {
     Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -24,20 +24,24 @@ public class ArchiveUtil {
     @Autowired
     private ArchiveConfig archiveConfig;
 
-    private String filePattern(String pattern) {
-        return "file_" + pattern;
+    //根据原id生成文件id
+    private String fileKey(String key) {
+        return "file_" + key;
     }
 
-    private String key(String pattern, Long date) {
-        return "file_" + pattern + "_" + date;
+    //根据不包含时间的id生成key
+    private String fileKey(String pattern, Long timestamp) {
+        return "file_" + pattern + "_" + timestamp;
     }
 
-    private String latestArchiveDateKey(String pattern) {
+    //一个pattern对应的最新文件的key
+    private String latestFileKey(String pattern) {
         return "latest_file_" + pattern;
     }
 
-    private Long getFileDateFromKey(String key) {
-        String[] strings = key.split("_");
+    //从一个文件key获取归档时间
+    private Long getFileTime(String fileKey) {
+        String[] strings = fileKey.split("_");
         return Long.parseLong(strings[strings.length - 1]);
     }
 
@@ -45,8 +49,8 @@ public class ArchiveUtil {
     public void archive(String pattern) {
         logger.info("Archive program begins to run.");
         long date = System.currentTimeMillis();
-        ssdbUtil.setVal(latestArchiveDateKey(pattern), date);
-        String key = key(pattern, date);
+        ssdbUtil.setVal(latestFileKey(pattern), date);
+        String key = fileKey(pattern, date);
         Map<String, String> map = ssdbUtil.popMap(pattern);
         if (map.size() <= archiveConfig.getLeastNumber()) return;
         try {
@@ -58,27 +62,20 @@ public class ArchiveUtil {
         }
     }
 
-    public Long getLatestArchiveDate(String pattern) {
-        return ssdbUtil.get(latestArchiveDateKey(pattern)).asLong();
+    //获取最新归档时间
+    public Long getLatestFileTime(String pattern) {
+        return ssdbUtil.get(latestFileKey(pattern)).asLong();
     }
 
-    public <T> List<T> get(String pattern, Long date, Class<T> clazz) throws Exception {
-        List<Long> dates = ssdbUtil.getMapKeys(filePattern(pattern)).parallelStream().map(key -> getFileDateFromKey(key)).sorted().collect(Collectors.toList());
-        return fdfsUtil.download(key(pattern, dates.get(CollectionUtil.lowerBound(dates, date))), clazz);
+    //获取某时间点的归档文件中数据
+    public <T> List<T> get(String pattern, Long timestamp, Class<T> clazz) throws Exception {
+        List<Long> fileTimeList = ssdbUtil.getKeys(fileKey(pattern)).parallelStream().map(fileKey -> getFileTime(fileKey)).sorted().collect(Collectors.toList());
+        return fdfsUtil.download(fileKey(pattern, fileTimeList.get(CollectionUtil.lowerBound(fileTimeList, timestamp))), clazz);
     }
 
-    public <T> List<T> get(String pattern, Long startDate, Long endDate, Class<T> clazz) {
-        List<Long> dates = ssdbUtil.getMapKeys(filePattern(pattern)).parallelStream().map(key -> getFileDateFromKey(key)).filter(fileDate -> fileDate >= startDate).sorted().collect(Collectors.toList());
-        return JSONUtil.mergeList(dates.subList(0, CollectionUtil.lowerBound(dates, endDate)).parallelStream().map(Try.of(date -> fdfsUtil.download(key(pattern, date)))).collect(Collectors.toList()), clazz);
-    }
-
-    //大数据单独归档，用户手动控制，较为简单
-
-    public void archiveOne(String key) throws Exception {
-        ssdbUtil.set(key, fdfsUtil.upload(ssdbUtil.get(key).asString()));
-    }
-
-    public <T> T getOne(String key, Class<T> clazz) throws Exception {
-        return fdfsUtil.downloadObject(key, clazz);
+    //获取某段时间的归档文件数据
+    public <T> List<T> get(String pattern, Long startTime, Long endTime, Class<T> clazz) {
+        List<Long> fileTimeList = ssdbUtil.getKeys(fileKey(pattern, startTime), fileKey(pattern, Long.MAX_VALUE)).parallelStream().map(key -> getFileTime(key)).sorted().collect(Collectors.toList());
+        return JSONUtil.mergeList(fileTimeList.subList(0, CollectionUtil.lowerBound(fileTimeList, endTime)).parallelStream().map(Try.of(timestamp -> fdfsUtil.download(fileKey(pattern, timestamp)))).collect(Collectors.toList()), clazz);
     }
 }

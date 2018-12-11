@@ -66,7 +66,7 @@ public class InitService implements CommandLineRunner {
             deviceInfoModel.setDeviceId("changhe01");
             deviceInfoModel.setFunctionId(DeviceInfoModel.ELECTRICITY);
             deviceInfoModel.setSeriesNumber(i);
-            deviceInfoModel.setDate(System.currentTimeMillis());
+            deviceInfoModel.setTimestamp(System.currentTimeMillis());
             ElectricityInfo electricityInfo = new ElectricityInfo();
             electricityInfo.setI(5);
             electricityInfo.setRate(85);

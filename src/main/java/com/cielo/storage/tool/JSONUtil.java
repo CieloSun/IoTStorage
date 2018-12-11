@@ -27,4 +27,9 @@ public class JSONUtil {
     public static <T> List<T> mergeList(List<String> jsonLists, Class<T> clazz) {
         return JSON.parseArray(mergeList(jsonLists), clazz);
     }
+
+    public static boolean isJSON(String str) {
+        str = str.trim();
+        return (str.startsWith("{") && str.endsWith("}")) || (str.startsWith("[") && str.endsWith("]"));
+    }
 }

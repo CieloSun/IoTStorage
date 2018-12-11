@@ -27,7 +27,7 @@ public class DeviceServerHandler extends SimpleChannelInboundHandler<String> {
         deviceManager.set(deviceId, ctx.channel());
         switch (deviceInfoModel.getFunctionId()) {
             case DeviceInfoModel.HEARTBEAT:
-                deviceInfoModel.setDate(System.currentTimeMillis());
+                deviceInfoModel.setTimestamp(System.currentTimeMillis());
                 deviceManager.sendObject(deviceId, deviceInfoModel);
             case DeviceInfoModel.ELECTRICITY:
                 //存储信息包
@@ -35,7 +35,7 @@ public class DeviceServerHandler extends SimpleChannelInboundHandler<String> {
                 //TODO 处理信息
                 //回复终端
                 deviceInfoModel.setContext(null);
-                deviceInfoModel.setDate(System.currentTimeMillis());
+                deviceInfoModel.setTimestamp(System.currentTimeMillis());
                 deviceManager.sendObject(deviceId, deviceInfoModel);
                 break;
         }

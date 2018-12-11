@@ -26,18 +26,20 @@ public class DeviceService {
     }
 
     private String key(DeviceInfoModel deviceInfoModel) {
-        return "device_" + deviceInfoModel.getFunctionId() + "_" + deviceInfoModel.getDeviceId() + "_" + deviceInfoModel.getDate();
+        return "device_" + deviceInfoModel.getFunctionId() + "_" + deviceInfoModel.getDeviceId() + "_" + deviceInfoModel.getTimestamp();
     }
 
-    private String key(String deviceId, Integer functionId, Long date) {
-        return "device_" + functionId + "_" + deviceId + "_" + date;
+    //终端key，格式为device_{功能码}_{终端号}_{timestamp}
+    private String key(String deviceId, Integer functionId, Long timestamp) {
+        return "device_" + functionId + "_" + deviceId + "_" + timestamp;
     }
 
-    private String latest(DeviceInfoModel deviceInfoModel) {
+    //根据终端id，终端功能生成latest键
+    private String latestKey(DeviceInfoModel deviceInfoModel) {
         return "latest_device_" + deviceInfoModel.getFunctionId() + "_" + deviceInfoModel.getDeviceId();
     }
 
-    private String latest(String deviceId, Integer functionId) {
+    private String latestKey(String deviceId, Integer functionId) {
         return "latest_device_" + functionId + "_" + deviceId;
     }
 
@@ -66,15 +68,15 @@ public class DeviceService {
     }
 
     public void saveDeviceInfo(DeviceInfoModel deviceInfoModel) {
-        if (deviceInfoModel.getDate() == null) {
-            deviceInfoModel.setDate(System.currentTimeMillis());
+        if (deviceInfoModel.getTimestamp() == null) {
+            deviceInfoModel.setTimestamp(System.currentTimeMillis());
         }
         ssdbUtil.set(key(deviceInfoModel), deviceInfoModel);
-        ssdbUtil.set(latest(deviceInfoModel), deviceInfoModel);
+        ssdbUtil.set(latestKey(deviceInfoModel), deviceInfoModel);
     }
 
     public DeviceInfoModel getLatestDeviceInfo(String deviceId, Integer functionId) {
-        return ssdbUtil.get(latest(deviceId, functionId), DeviceInfoModel.class);
+        return ssdbUtil.get(latestKey(deviceId, functionId), DeviceInfoModel.class);
     }
 
     public Set<DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate) {
@@ -84,20 +86,20 @@ public class DeviceService {
     //批量归档中获取多个对象
     public Set<DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) {
         Set<DeviceInfoModel> values = new HashSet<>();
-        if (archiveUtil.getLatestArchiveDate(pattern(deviceId, functionId)) < endDate)
-            values.addAll(ssdbUtil.getMapValues(key(deviceId, functionId, startDate), key(deviceId, functionId, endDate), DeviceInfoModel.class));
-        if (archiveUtil.getLatestArchiveDate(pattern(deviceId, functionId)) > startDate)
+        if (archiveUtil.getLatestFileTime(pattern(deviceId, functionId)) < endDate)
+            values.addAll(ssdbUtil.getValues(key(deviceId, functionId, startDate), key(deviceId, functionId, endDate), DeviceInfoModel.class));
+        if (archiveUtil.getLatestFileTime(pattern(deviceId, functionId)) > startDate)
             values.addAll(archiveUtil.get(pattern(deviceId, functionId), startDate, endDate, DeviceInfoModel.class)
-                    .parallelStream().filter(deviceInfoModel -> deviceInfoModel.getDate() >= startDate && deviceInfoModel.getDate() <= endDate).sorted().collect(Collectors.toList()));
+                    .parallelStream().filter(deviceInfoModel -> deviceInfoModel.getTimestamp() >= startDate && deviceInfoModel.getTimestamp() <= endDate).sorted().collect(Collectors.toList()));
         return values;
     }
 
     //批量归档中获取单个对象
-    public DeviceInfoModel getDeviceInfo(String deviceId, Integer functionId, Long date) throws Exception {
-        if (archiveUtil.getLatestArchiveDate(pattern(deviceId, functionId)) <= date)
-            return ssdbUtil.get(key(deviceId, functionId, date), DeviceInfoModel.class);
+    public DeviceInfoModel getDeviceInfo(String deviceId, Integer functionId, Long timestamp) throws Exception {
+        if (archiveUtil.getLatestFileTime(pattern(deviceId, functionId)) <= timestamp)
+            return ssdbUtil.get(key(deviceId, functionId, timestamp), DeviceInfoModel.class);
         else {
-            Optional<DeviceInfoModel> optional = archiveUtil.get(pattern(deviceId, functionId), date, DeviceInfoModel.class).parallelStream().filter(deviceInfoModel -> deviceInfoModel.getDate() == date).findAny();
+            Optional<DeviceInfoModel> optional = archiveUtil.get(pattern(deviceId, functionId), timestamp, DeviceInfoModel.class).parallelStream().filter(deviceInfoModel -> deviceInfoModel.getTimestamp() == timestamp).findAny();
             if (optional.isPresent()) return optional.get();
             else throw new Exception("Cannot find info.");
         }

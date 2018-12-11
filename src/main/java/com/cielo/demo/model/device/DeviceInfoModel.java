@@ -11,7 +11,7 @@ public class DeviceInfoModel<T> implements Comparable<DeviceInfoModel<T>> {
 
     private String deviceId;
     private Integer functionId;
-    private Long date;
+    private Long timestamp;
     private Integer seriesNumber;
     private T context;
 
@@ -19,6 +19,6 @@ public class DeviceInfoModel<T> implements Comparable<DeviceInfoModel<T>> {
     public int compareTo(@NotNull DeviceInfoModel<T> deviceInfoModel) {
         int functionIdCompareResult = functionId.compareTo(deviceInfoModel.getFunctionId());
         int deviceIdCompareResult = deviceId.compareTo(deviceInfoModel.getDeviceId());
-        return deviceIdCompareResult == 0 ? functionIdCompareResult == 0 ? date.compareTo(deviceInfoModel.date) : functionIdCompareResult : deviceIdCompareResult;
+        return deviceIdCompareResult == 0 ? functionIdCompareResult == 0 ? timestamp.compareTo(deviceInfoModel.timestamp) : functionIdCompareResult : deviceIdCompareResult;
     }
 }
