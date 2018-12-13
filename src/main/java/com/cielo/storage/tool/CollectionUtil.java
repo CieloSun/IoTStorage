@@ -1,5 +1,6 @@
 package com.cielo.storage.tool;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,5 +34,9 @@ public class CollectionUtil {
     public static <T> List<T> addAllAndDistinctByKey(List<T> originList, List<T> newList, Function<? super T, Object> keyExtractor){
         originList.addAll(newList);
         return originList.stream().filter(distinctByKey(keyExtractor)).collect(Collectors.toList());
+    }
+
+    public static <T> List<T> toList(Collection<T> collection){
+        return collection.parallelStream().collect(Collectors.toList());
     }
 }

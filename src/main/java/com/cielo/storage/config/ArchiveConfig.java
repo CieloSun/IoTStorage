@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties("archive")
 public class ArchiveConfig {
+    @Value("true")
+    private boolean archive;
     @Value("0")
     private Integer leastNumber;
 }

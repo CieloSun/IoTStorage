@@ -11,6 +11,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Order(1)
@@ -43,6 +44,10 @@ public class FDFSUtil implements CommandLineRunner {
 
     public <T> T downloadObject(String path, Class<T> clazz) throws Exception {
         return JSON.parseObject(download(path), clazz);
+    }
+
+    public <T> Map<Object, T> downloadMap(String path, Class<T> clazz) throws Exception {
+        return JSON.parseObject(download(path), Map.class);
     }
 
     public String download(String path) throws Exception {

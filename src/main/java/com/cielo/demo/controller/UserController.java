@@ -79,7 +79,7 @@ public class UserController {
     @GetMapping("admin/permission/{token}")
     public List<Permission> showAllPermission(@PathVariable String token) throws Exception {
         userService.authPermission(token, Permission.GET_USER);
-        return ssdbUtil.getValues("permission_", Permission.class);
+        return ssdbUtil.scanValues("permission_", Permission.class);
     }
 
     @PostMapping("admin/role/{token}")

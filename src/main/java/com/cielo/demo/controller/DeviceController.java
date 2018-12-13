@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 //终端服务用于示例archive模式的使用方法
 @RestController
@@ -39,7 +39,7 @@ public class DeviceController {
     }
 
     @GetMapping("info/{token}")
-    public Set<DeviceInfoModel> getDeviceInfo(@PathVariable String token, String deviceId, Integer function, Long startTime, @RequestParam(required = false) Long endTime) {
+    public Map<Object, DeviceInfoModel> getDeviceInfo(@PathVariable String token, String deviceId, Integer function, Long startTime, @RequestParam(required = false) Long endTime) {
         return deviceService.getDeviceInfoByTime(deviceId, function, startTime, endTime);
     }
 

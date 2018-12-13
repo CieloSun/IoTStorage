@@ -36,7 +36,7 @@ public class StoreUtil {
         return getVal(ssdbUtil.get(key).asString(), clazz);
     }
 
-    public <T> List<T> getValues(String pattern, Class<T> clazz) throws Exception {
-        return ssdbUtil.getMap(pattern).values().parallelStream().map(Try.of(value -> getVal(value, clazz))).collect(Collectors.toList());
+    public <T> List<T> getValues(String prefix, Class<T> clazz) throws Exception {
+        return ssdbUtil.scan(prefix).values().parallelStream().map(Try.of(value -> getVal(value, clazz))).collect(Collectors.toList());
     }
 }
