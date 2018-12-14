@@ -4,7 +4,7 @@ import com.cielo.demo.model.user.Permission;
 import com.cielo.demo.model.user.Role;
 import com.cielo.demo.model.user.User;
 import com.cielo.demo.service.core.UserService;
-import com.cielo.storage.core.SSDBUtil;
+import com.cielo.storage.api.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

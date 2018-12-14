@@ -18,5 +18,6 @@ device-config:
   archive-function-id-list: [2]
 archive:
   least-number: 0
+  archive: true
 device-server:
   port: 42001

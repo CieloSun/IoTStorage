@@ -2,8 +2,8 @@ package com.cielo.demo.service.core;
 
 import com.cielo.demo.model.device.Device;
 import com.cielo.demo.model.device.DeviceInfoModel;
-import com.cielo.storage.core.TimeDataUtil;
-import com.cielo.storage.core.SSDBUtil;
+import com.cielo.storage.api.TimeDataUtil;
+import com.cielo.storage.api.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -63,7 +63,6 @@ public class DeviceService {
 
     //批量归档中获取多个对象
     public Map<Object, DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) {
-        if (endDate == null) endDate = System.currentTimeMillis();
         return timeDataUtil.get(hName(deviceId, functionId), startDate, endDate, DeviceInfoModel.class);
     }
 

@@ -3,23 +3,19 @@ package com.cielo.storage.tool;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class CollectionUtil {
-    public static  <T> int lowerBound(List<? extends Comparable<? super T>> list, T key) {
+    public static <T> int lowerBound(List<? extends Comparable<? super T>> list, T key) {
         int low = 0;
         int high = list.size() - 1;
         while (low < high) {
             int mid = low + (high - low) / 2;
-            if (list.get(mid).compareTo(key) < 0) {
-                low = mid + 1;
-            } else {
-                high = mid;
-            }
+            if (list.get(mid).compareTo(key) < 0) low = mid + 1;
+            else high = mid;
         }
         return low;
     }
@@ -31,12 +27,12 @@ public class CollectionUtil {
     }
 
     //第一个参数的List中值会被保留的简易去重
-    public static <T> List<T> addAllAndDistinctByKey(List<T> originList, List<T> newList, Function<? super T, Object> keyExtractor){
+    public static <T> List<T> addAllAndDistinctByKey(List<T> originList, List<T> newList, Function<? super T, Object> keyExtractor) {
         originList.addAll(newList);
         return originList.stream().filter(distinctByKey(keyExtractor)).collect(Collectors.toList());
     }
 
-    public static <T> List<T> toList(Collection<T> collection){
+    public static <T> List<T> toList(Collection<T> collection) {
         return collection.parallelStream().collect(Collectors.toList());
     }
 }

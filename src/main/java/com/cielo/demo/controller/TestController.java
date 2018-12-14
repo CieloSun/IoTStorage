@@ -1,7 +1,7 @@
 package com.cielo.demo.controller;
 
 import com.cielo.demo.service.scheduled.DeviceScheduled;
-import com.cielo.storage.core.FDFSUtil;
+import com.cielo.storage.api.FDFSUtil;
 import org.csource.fastdfs.FileInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;

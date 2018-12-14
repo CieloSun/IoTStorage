@@ -2,7 +2,7 @@ package com.cielo.demo.service.core;
 
 import com.cielo.demo.model.user.Role;
 import com.cielo.demo.model.user.User;
-import com.cielo.storage.core.SSDBUtil;
+import com.cielo.storage.api.SSDBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

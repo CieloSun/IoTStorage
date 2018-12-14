@@ -1,5 +1,8 @@
 package com.cielo.storage.core;
 
+import com.cielo.storage.api.FDFSUtil;
+import com.cielo.storage.api.SSDBUtil;
+import com.cielo.storage.api.TimeDataUtil;
 import com.cielo.storage.config.ArchiveConfig;
 import com.cielo.storage.tool.CollectionUtil;
 import com.cielo.storage.tool.JSONUtil;
@@ -16,8 +19,7 @@ import java.util.stream.Collectors;
 
 //用于管理较小value，采用小数据合并的方式归档SSDB中数据
 @Service
-public class TimeDataUtil {
-    public static final String LATEST = "latest_file";
+class TimeDataUtilImpl implements TimeDataUtil {
     Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired
     private FDFSUtil fdfsUtil;
@@ -42,11 +44,13 @@ public class TimeDataUtil {
         return ssdbUtil.scanKeys(fileKey(prefix, timestamp), fileKey(prefix, System.currentTimeMillis())).parallelStream().map(fileKey -> getFileTime(fileKey)).sorted().collect(Collectors.toList());
     }
 
+    @Override
     public void set(String hName, Object val) {
         ssdbUtil.hSet(hName, System.currentTimeMillis(), val);
     }
 
     //获取可能归档的hashMap中具体某条数据
+    @Override
     public <T> T get(String hName, Long timestamp, Class<T> clazz) throws Exception {
         T t = ssdbUtil.hGet(hName, timestamp, clazz);
         if (t != null || !archiveConfig.isArchive()) return t;
@@ -55,10 +59,16 @@ public class TimeDataUtil {
         return fdfsUtil.downloadMap(fileKey(hName, fileTimeList.get(CollectionUtil.lowerBound(fileTimeList, timestamp))), clazz).get(timestamp);
     }
 
-    //获取可能归档的hashMap中某段数据
+    //获取可能归档的hashMap中某段数据,由于Lambda要求所在方法可重入，因而拆分
+    @Override
     public <T> Map<Object, T> get(String hName, Long startTime, Long endTime, Class<T> clazz) {
-        if (!archiveConfig.isArchive()) return ssdbUtil.hScan(hName, startTime, endTime, clazz);
+        if (startTime == null) startTime = 0l;
+        if (endTime == null) endTime = System.currentTimeMillis();
+        return getMap(hName, startTime, endTime, clazz);
+    }
 
+    private <T> Map<Object, T> getMap(String hName, Long startTime, Long endTime, Class<T> clazz) {
+        if (!archiveConfig.isArchive()) return ssdbUtil.hScan(hName, startTime, endTime, clazz);
         Map<Object, T> map = new HashMap<>();
         Long latestFileTime = getLatestFileTime(hName);
         if (endTime >= latestFileTime) map.putAll(ssdbUtil.hScan(hName, startTime, endTime, clazz));
@@ -71,7 +81,9 @@ public class TimeDataUtil {
     }
 
     //hashMap中数据归档,hashMap中key为时间戳，val为JSON对象
+    @Override
     public void archive(String hName) {
+        if (!archiveConfig.isArchive()) return;
         logger.info("Archive program in hash map begins to run.");
         long timestamp = System.currentTimeMillis();
         Map<String, String> map = ssdbUtil.hPopAll(hName).mapString();
@@ -88,6 +100,7 @@ public class TimeDataUtil {
     }
 
     //获取hashMap中最新归档时间
+    @Override
     public Long getLatestFileTime(String hName) {
         return ssdbUtil.hGet(hName, LATEST).asLong();
     }
