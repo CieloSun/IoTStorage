@@ -7,12 +7,10 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties("fdfs")
-public class FDFSConfig {
-    @Value("false")
-    private boolean assignGroup;
-    @Value("group1")
-    private String group;
-    @Value("fdfs_client.conf")
-    private String configFile;
+@ConfigurationProperties("zstd")
+public class ZstdConfig {
+    @Value("3")
+    private int level;
+    @Value("jsonDic")
+    private String dictionaryFile;
 }

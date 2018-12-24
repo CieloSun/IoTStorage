@@ -23,7 +23,7 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
 
     @Override
     public void run(String... args) throws Exception {
-        ClientGlobal.init("fdfs_client.conf");
+        ClientGlobal.init(fdfsConfig.getConfigFile());
         storageClient = new StorageClient();
     }
 
