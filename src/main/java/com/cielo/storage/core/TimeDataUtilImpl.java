@@ -28,9 +28,14 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Autowired
     private ArchiveConfig archiveConfig;
 
+    //根据prefix生成filePattern
+    private String filePattern(String prefix) {
+        return "file_" + prefix;
+    }
+
     //根据不包含时间的id生成key
     private String fileKey(String prefix, Long timestamp) {
-        return "file_" + prefix + "_" + timestamp;
+        return filePattern(prefix) + "_" + timestamp;
     }
 
     //从一个文件key获取归档时间
@@ -41,7 +46,17 @@ class TimeDataUtilImpl implements TimeDataUtil {
 
     //获取某一prefix某一时间点后的文件归档时间列表
     private List<Long> getFileTimeList(String prefix, Long timestamp) {
-        return ssdbUtil.scanKeys(fileKey(prefix, timestamp), fileKey(prefix, System.currentTimeMillis())).parallelStream().map(fileKey -> getFileTime(fileKey)).sorted().collect(Collectors.toList());
+        return getFileTimeList(prefix, timestamp, System.currentTimeMillis());
+    }
+
+    //获取某一prefix某一段时间的文件列表
+    private List<Long> getFileTimeList(String prefix, Long startTime, Long endTime) {
+        return getFileList(prefix, startTime, endTime).parallelStream().map(fileKey -> getFileTime(fileKey)).sorted().collect(Collectors.toList());
+    }
+
+    //获取某一prefix某一段时间的归档key列表
+    private List<String> getFileList(String prefix, Long startTime, Long endTime) {
+        return ssdbUtil.scanKeys(fileKey(prefix, startTime), fileKey(prefix, endTime));
     }
 
     @Override
@@ -80,6 +95,24 @@ class TimeDataUtilImpl implements TimeDataUtil {
         return map;
     }
 
+    //获取hashMap中最新归档时间
+    @Override
+    public Long getLatestFileTime(String hName) {
+        return ssdbUtil.hGet(hName, LATEST).asLong();
+    }
+
+    @Override
+    public void clear(String hName) {
+        ssdbUtil.hClear(hName);
+        ssdbUtil.multiDel(filePattern(hName));
+    }
+
+    @Override
+    public void del(String hName, Long startTime, Long endTime) {
+        ssdbUtil.hDel(hName, startTime, endTime);
+        ssdbUtil.multiDel(hName, startTime, endTime);
+    }
+
     //hashMap中数据归档,hashMap中key为时间戳，val为JSON对象
     @Override
     public void archive(String hName) {
@@ -99,9 +132,5 @@ class TimeDataUtilImpl implements TimeDataUtil {
         }
     }
 
-    //获取hashMap中最新归档时间
-    @Override
-    public Long getLatestFileTime(String hName) {
-        return ssdbUtil.hGet(hName, LATEST).asLong();
-    }
+
 }

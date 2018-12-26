@@ -159,17 +159,22 @@ class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
         return ssdb.del(key);
     }
 
-    //基于前缀删除多个key，异步
-    @Override
-    public Response multiDel(Object prefix) {
-        return ssdb.multi_del(scanKeys(prefix).toArray());
-    }
-
     //删除多个key，异步
     @Override
     @Async
     public Response multiDel(Object[] keys) {
         return ssdb.multi_del(keys);
+    }
+
+    @Override
+    public Response multiDel(Object prefix, Object fromKey, Object endKey) {
+        return ssdb.multi_del(scanKeys(fromKey, endKey).toArray());
+    }
+
+    //基于前缀删除多个key，异步
+    @Override
+    public Response multiDel(Object prefix) {
+        return ssdb.multi_del(scanKeys(prefix).toArray());
     }
 
     //判断一个key是否存在
@@ -263,11 +268,6 @@ class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     }
 
     @Override
-    public Response hDel(String name, Object key) {
-        return ssdb.hdel(name, key);
-    }
-
-    @Override
     public Integer hSize(String name) {
         return ssdb.hsize(name).asInt();
     }
@@ -335,6 +335,17 @@ class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     @Override
     public <T> Map<Object, T> hScan(String name, Object prefix, Class<T> clazz) {
         return JSONUtil.toMap(hScan(name, prefix), clazz);
+    }
+
+    @Override
+    public Response hDel(String name, Object key) {
+        return ssdb.hdel(name, key);
+    }
+
+    @Override
+    @Async
+    public Response hDel(String name, Object fromKey, Object endKey) {
+        return ssdb.multi_hdel(name, hScanKeys(name, fromKey, endKey).toArray());
     }
 
     @Override

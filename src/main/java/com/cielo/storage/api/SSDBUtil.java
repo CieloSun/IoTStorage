@@ -66,6 +66,9 @@ public interface SSDBUtil {
     //基于前缀删除多个key，异步
     Response multiDel(Object prefix);
 
+    @Async
+    Response multiDel(Object prefix, Object fromKey, Object endKey);
+
     //删除多个key，异步
     @Async
     Response multiDel(Object[] keys);
@@ -107,8 +110,6 @@ public interface SSDBUtil {
 
     <T> List<T> hPopAll(String name, Class<T> clazz);
 
-    Response hDel(String name, Object key);
-
     Integer hSize(String name);
 
     boolean hExists(String name, Object key);
@@ -136,6 +137,11 @@ public interface SSDBUtil {
     <T> Map<Object, T> hScan(String name, Object fromKey, Object endKey, Class<T> clazz);
 
     <T> Map<Object, T> hScan(String name, Object prefix, Class<T> clazz);
+
+    Response hDel(String name, Object key);
+
+    @Async
+    Response hDel(String name, Object fromKey, Object endKey);
 
     @Async
     Response hClear(String name);

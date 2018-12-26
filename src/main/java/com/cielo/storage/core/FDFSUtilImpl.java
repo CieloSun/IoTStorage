@@ -76,8 +76,8 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
     }
 
     @Override
-    public <T> List<T> download(String path, Class<T> clazz) throws Exception {
-        return JSON.parseArray(download(path), clazz);
+    public <T> List<T> downloadList(String path, Class<T> clazz) throws Exception {
+        return JSON.parseArray(downloadString(path), clazz);
     }
 
     @Override
@@ -89,39 +89,29 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
     }
 
     @Override
-    public String download(String path) throws Exception {
+    public String downloadString(String path) throws Exception {
         return new String(downloadBytes(path));
     }
 
     @Override
     public <T> T downloadObject(String path, Class<T> clazz) throws Exception {
-        return JSON.parseObject(download(path), clazz);
+        return JSON.parseObject(downloadString(path), clazz);
     }
 
     @Override
     public <T> Map<Object, T> downloadMap(String path, Class<T> clazz) throws Exception {
-        return JSON.parseObject(download(path), Map.class);
-    }
-
-    @Override
-    public Integer delete(String group, String fileId) throws Exception {
-        return storageClient.delete_file(group, fileId);
+        return JSON.parseObject(downloadString(path), Map.class);
     }
 
     @Override
     public Integer delete(String path) throws Exception {
         String[] strings = path.split("/", 2);
-        return delete(strings[0], strings[1]);
+        return storageClient.delete_file(strings[0], strings[1]);
     }
 
     @Override
     public FileInfo info(String path) throws Exception {
         String[] strings = path.split("/", 2);
         return storageClient.get_file_info(strings[0], strings[1]);
-    }
-
-    @Override
-    public FileInfo info(String group, String fileId) throws Exception {
-        return storageClient.get_file_info(group, fileId);
     }
 }

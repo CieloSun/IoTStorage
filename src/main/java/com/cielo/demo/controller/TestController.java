@@ -25,7 +25,7 @@ public class TestController {
 
     @GetMapping("download")
     public String download(String path) throws Exception {
-        return fdfsUtil.download(path);
+        return fdfsUtil.downloadString(path);
     }
 
     @GetMapping("info")

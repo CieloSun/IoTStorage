@@ -13,9 +13,13 @@ public interface TimeDataUtil {
     //获取可能归档的hashMap中某段数据
     <T> Map<Object, T> get(String hName, Long startTime, Long endTime, Class<T> clazz);
 
-    //hashMap中数据归档,hashMap中key为时间戳，val为JSON对象
-    void archive(String hName);
-
     //获取hashMap中最新归档时间
     Long getLatestFileTime(String hName);
+
+    void clear(String hName);
+
+    void del(String hName, Long startTime, Long endTime);
+
+    //hashMap中数据归档,hashMap中key为时间戳，val为JSON对象
+    void archive(String hName);
 }
