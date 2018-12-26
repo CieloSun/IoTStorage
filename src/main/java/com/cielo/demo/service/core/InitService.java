@@ -56,7 +56,7 @@ public class InitService implements CommandLineRunner {
             ElectricityInfo electricityInfo = new ElectricityInfo();
             electricityInfo.setI(Math.random() * 10);
             electricityInfo.setRate(80 + Math.random() * 20);
-            electricityInfo.setRunTime(12 * 60 * 60 + System.currentTimeMillis() - timestamp);
+            electricityInfo.setRunTime(12 * 60 * 60);
             electricityInfo.setTemperature(25 + Math.random() * 15);
             electricityInfo.setV(215 + Math.random() * 10);
             deviceInfoModel.setContext(electricityInfo);
@@ -73,7 +73,7 @@ public class InitService implements CommandLineRunner {
 
             }
             try {
-                Thread.sleep(100);
+                Thread.sleep((int) (50 + Math.random() * 100));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
