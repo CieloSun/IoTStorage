@@ -15,4 +15,10 @@ public class FDFSConfig {
     private String group;
     @Value("fdfs_client.conf")
     private String configFile;
+    @Value("true")
+    private boolean compression;
+    @Value("3")
+    private int compressionLevel;
+    @Value("device.dic")
+    private String dictionaryFile;
 }

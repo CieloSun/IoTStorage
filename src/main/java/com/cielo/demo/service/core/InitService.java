@@ -1,5 +1,6 @@
 package com.cielo.demo.service.core;
 
+import com.alibaba.fastjson.JSON;
 import com.cielo.demo.model.device.Device;
 import com.cielo.demo.model.device.DeviceInfoModel;
 import com.cielo.demo.model.device.ElectricityInfo;
@@ -15,6 +16,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.stream.IntStream;
 
@@ -32,6 +36,48 @@ public class InitService implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (initConfig.isInitDatabase()) initDatabase();
+    }
+
+    public void initDeviceInfoData(int amount, boolean... flags) {
+        //初始化一个路灯
+        deviceService.editDevice(new Device("changhe01"));
+        if (flags.length > 0 && flags[0]) {
+            File file = new File("trainDir");
+            if (!file.exists()) file.mkdir();
+        }
+        //初始化一些数据
+        IntStream.range(0, amount).forEach(i -> {
+            DeviceInfoModel<ElectricityInfo> deviceInfoModel = new DeviceInfoModel<>();
+            deviceInfoModel.setDeviceId("changhe01");
+            deviceInfoModel.setFunctionId(DeviceInfoModel.ELECTRICITY);
+            deviceInfoModel.setSeriesNumber(i);
+            long timestamp = System.currentTimeMillis();
+            deviceInfoModel.setTimestamp(timestamp);
+            ElectricityInfo electricityInfo = new ElectricityInfo();
+            electricityInfo.setI(Math.random() * 10);
+            electricityInfo.setRate(80 + Math.random() * 20);
+            electricityInfo.setRunTime(12 * 60 * 60 + System.currentTimeMillis() - timestamp);
+            electricityInfo.setTemperature(25 + Math.random() * 15);
+            electricityInfo.setV(215 + Math.random() * 10);
+            deviceInfoModel.setContext(electricityInfo);
+            deviceService.saveDeviceInfo(deviceInfoModel);
+            if (flags.length > 0 && flags[0]) {
+                File jsonFile = new File("trainDir/deviceInfo_" + timestamp + ".json");
+                try {
+                    FileOutputStream fileOutputStream = new FileOutputStream(jsonFile);
+                    fileOutputStream.write(JSON.toJSONBytes(deviceInfoModel));
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     //生成数据库初始数据
@@ -58,29 +104,9 @@ public class InitService implements CommandLineRunner {
         ssdbUtil.set(Role.key(Role.GUEST), new Role(Role.GUEST, new HashSet<>()));
         //初始化管理员用户
         ssdbUtil.set(User.key("admin"), new User("admin", "admin", Role.ADMIN));
-        //初始化一个路灯
-        deviceService.editDevice(new Device("changhe01"));
-        //初始化一些数据
-        IntStream.range(0, 10).forEach(i -> {
-            DeviceInfoModel<ElectricityInfo> deviceInfoModel = new DeviceInfoModel<>();
-            deviceInfoModel.setDeviceId("changhe01");
-            deviceInfoModel.setFunctionId(DeviceInfoModel.ELECTRICITY);
-            deviceInfoModel.setSeriesNumber(i);
-            deviceInfoModel.setTimestamp(System.currentTimeMillis());
-            ElectricityInfo electricityInfo = new ElectricityInfo();
-            electricityInfo.setI(5);
-            electricityInfo.setRate(85);
-            electricityInfo.setRunTime(12 * 60 * 60);
-            electricityInfo.setTemperature(40);
-            electricityInfo.setV(220);
-            deviceInfoModel.setContext(electricityInfo);
-            deviceService.saveDeviceInfo(deviceInfoModel);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
+        initDeviceInfoData(10);
+        //生成海量训练数据
+//        initDeviceInfoData(50000, true);
         logger.info("The storage database has init");
     }
 }

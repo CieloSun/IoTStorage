@@ -10,6 +10,8 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.nutz.ssdb4j.SSDBs;
 import org.nutz.ssdb4j.spi.Response;
 import org.nutz.ssdb4j.spi.SSDB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -22,6 +24,7 @@ import java.util.Map;
 @Service
 @Order(1)
 class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
+    Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired
     private SSDBConfig ssdbConfig;
     private SSDB ssdb;
@@ -41,6 +44,7 @@ class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
         genericObjectPoolConfig.setTestWhileIdle(ssdbConfig.isTestWhileIdle());
         genericObjectPoolConfig.setLifo(ssdbConfig.isLifo());
         ssdb = SSDBs.pool(ssdbConfig.getHost(), ssdbConfig.getPort(), ssdbConfig.getTimeout(), genericObjectPoolConfig);
+        logger.info("SSDB pool has init");
     }
 
     //设置一个基本类型值

@@ -11,6 +11,10 @@ ssdb:
 fdfs:
   assign-group: false
   group: group2
+  config-file: fdfs_client.conf
+  dictionary-file: device.dic
+  compression-level: 3
+  compression: true
 
 init:
   init-database: true
