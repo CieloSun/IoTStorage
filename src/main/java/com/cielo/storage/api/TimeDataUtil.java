@@ -1,25 +1,27 @@
 package com.cielo.storage.api;
 
+import com.cielo.storage.model.DataTag;
+
 import java.util.Map;
 
 public interface TimeDataUtil {
-    String LATEST = "latest_file";
+    void set(DataTag dataTag, Object val);
 
-    void set(String hName, Object val);
+    void set(DataTag dataTag, Long timestamp, Object val);
 
     //获取可能归档的hashMap中具体某条数据
-    <T> T get(String hName, Long timestamp, Class<T> clazz) throws Exception;
+    <T> T get(DataTag dataTag, Long timestamp, Class<T> clazz) throws Exception;
 
     //获取可能归档的hashMap中某段数据
-    <T> Map<Object, T> get(String hName, Long startTime, Long endTime, Class<T> clazz);
+    <T> Map<Object, T> get(DataTag dataTag, Long startTime, Long endTime, Class<T> clazz);
 
     //获取hashMap中最新归档时间
-    Long getLatestFileTime(String hName);
+    Long getLatestFileTime(DataTag dataTag);
 
-    void clear(String hName);
+    void clear(DataTag dataTag);
 
-    void del(String hName, Long startTime, Long endTime);
+    void del(DataTag dataTag, Long startTime, Long endTime);
 
     //hashMap中数据归档,hashMap中key为时间戳，val为JSON对象
-    void archive(String hName);
+    void archive(DataTag dataTag);
 }

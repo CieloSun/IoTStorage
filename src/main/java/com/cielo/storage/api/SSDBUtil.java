@@ -1,8 +1,8 @@
 package com.cielo.storage.api;
 
 import com.alibaba.fastjson.parser.Feature;
+import com.cielo.storage.model.DataTag;
 import org.nutz.ssdb4j.spi.Response;
-import org.nutz.ssdb4j.spi.SSDB;
 import org.springframework.scheduling.annotation.Async;
 
 import java.util.List;
@@ -88,61 +88,65 @@ public interface SSDBUtil {
     //某key值自减
     Response decr(Object key, int val);
 
-    Response hSetVal(String name, Object key, Object val);
+    Response hSetVal(DataTag tag, Object key, Object val);
 
-    Response hSet(String name, Object key, Object val);
+    Response hSet(DataTag tag, Object key, Object val);
 
-    Response hGet(String name, Object key);
+    Response hMultiSet(DataTag tag, Map map);
 
-    <T> T hGet(String name, Object key, Class<T> clazz, Feature... features);
+    Response hGet(DataTag tag, Object key);
 
-    Response multiHGet(String name, Object... keys);
+    <T> T hGet(DataTag tag, Object key, Class<T> clazz, Feature... features);
 
-    <T> List<T> multiHGet(Class<T> clazz, String name, Object... keys);
+    Response hMultiGet(DataTag tag, Object... keys);
 
-    Response hGetAll(String name);
+    <T> List<T> hMultiGet(Class<T> clazz, DataTag tag, Object... keys);
 
-    <T> List<T> hGetAll(String name, Class<T> clazz);
+    Response hGetAll(DataTag tag);
 
-    List<String> hGetAllKeys(String name);
+    <T> List<T> hGetAll(DataTag tag, Class<T> clazz);
 
-    Response hPopAll(String name);
+    List<String> hGetAllKeys(DataTag tag);
 
-    <T> List<T> hPopAll(String name, Class<T> clazz);
+    Response hPopAll(DataTag tag);
 
-    Integer hSize(String name);
+    <T> List<T> hPopAll(DataTag tag, Class<T> clazz);
 
-    boolean hExists(String name, Object key);
+    Integer hSize(DataTag tag);
+
+    boolean hExists(DataTag tag, Object key);
 
     List<String> hScanName(Object fromName, Object endName);
 
     List<String> hScanName(Object prefix);
 
-    List<String> hScanKeys(String name, Object fromKey, Object endKey);
+    List<String> hScanName(DataTag tag);
 
-    List<String> hScanKeys(String name, Object prefix);
+    List<String> hScanKeys(DataTag tag, Object fromKey, Object endKey);
 
-    Map<String, String> hScan(String name, Object fromKey, Object endKey);
+    List<String> hScanKeys(DataTag tag, Object prefix);
 
-    Map<String, String> hScan(String name, Object prefix);
+    Map<String, String> hScan(DataTag tag, Object fromKey, Object endKey);
 
-    String hScanValues(String name, Object fromKey, Object endKey);
+    Map<String, String> hScan(DataTag tag, Object prefix);
 
-    String hScanValues(String name, Object prefix);
+    String hScanValues(DataTag tag, Object fromKey, Object endKey);
 
-    <T> List<T> hScanValues(String name, Object fromKey, Object endKey, Class<T> clazz);
+    String hScanValues(DataTag tag, Object prefix);
 
-    <T> List<T> hScanValues(String name, Object prefix, Class<T> clazz);
+    <T> List<T> hScanValues(DataTag tag, Object fromKey, Object endKey, Class<T> clazz);
 
-    <T> Map<Object, T> hScan(String name, Object fromKey, Object endKey, Class<T> clazz);
+    <T> List<T> hScanValues(DataTag tag, Object prefix, Class<T> clazz);
 
-    <T> Map<Object, T> hScan(String name, Object prefix, Class<T> clazz);
+    <T> Map<Object, T> hScan(DataTag tag, Object fromKey, Object endKey, Class<T> clazz);
 
-    Response hDel(String name, Object key);
+    <T> Map<Object, T> hScan(DataTag tag, Object prefix, Class<T> clazz);
+
+    Response hDel(DataTag tag, Object key);
 
     @Async
-    Response hDel(String name, Object fromKey, Object endKey);
+    Response hDel(DataTag tag, Object fromKey, Object endKey);
 
     @Async
-    Response hClear(String name);
+    Response hClear(DataTag tag);
 }

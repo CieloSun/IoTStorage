@@ -1,7 +1,7 @@
 package com.cielo.demo.service.scheduled;
 
-import com.cielo.demo.service.core.DeviceService;
 import com.cielo.demo.service.config.DeviceConfig;
+import com.cielo.demo.service.core.DeviceService;
 import com.cielo.storage.api.TimeDataUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;

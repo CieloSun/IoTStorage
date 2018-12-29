@@ -2,8 +2,9 @@ package com.cielo.demo.service.core;
 
 import com.cielo.demo.model.device.Device;
 import com.cielo.demo.model.device.DeviceInfoModel;
-import com.cielo.storage.api.TimeDataUtil;
 import com.cielo.storage.api.SSDBUtil;
+import com.cielo.storage.api.TimeDataUtil;
+import com.cielo.storage.model.DataTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,19 +13,19 @@ import java.util.Map;
 
 @Service
 public class DeviceService {
-    public static final String DEVICE = "config_device";
-    public static final String LATEST = "latest_device";
+    public static final DataTag DEVICE = new DataTag("configDevice");
+    public static final DataTag LATEST = new DataTag("latestDevice");
     @Autowired
     private SSDBUtil ssdbUtil;
     @Autowired
     private TimeDataUtil timeDataUtil;
 
-    public String hName(DeviceInfoModel deviceInfoModel) {
+    public DataTag hName(DeviceInfoModel deviceInfoModel) {
         return hName(deviceInfoModel.getDeviceId(), deviceInfoModel.getFunctionId());
     }
 
-    public String hName(String deviceId, Integer functionId) {
-        return "device_" + functionId + "_" + deviceId;
+    public DataTag hName(String deviceId, Integer functionId) {
+        return new DataTag("device", deviceId, functionId.toString());
     }
 
     public void editDevice(Device device) {
@@ -48,11 +49,11 @@ public class DeviceService {
     }
 
     public List<Device> getDevices(String... keys) {
-        return ssdbUtil.multiHGet(Device.class, DEVICE, keys);
+        return ssdbUtil.hMultiGet(Device.class, DEVICE, keys);
     }
 
     public void saveDeviceInfo(DeviceInfoModel deviceInfoModel) {
-        String hName = hName(deviceInfoModel);
+        DataTag hName = hName(deviceInfoModel);
         ssdbUtil.hSet(hName, LATEST, deviceInfoModel);
         timeDataUtil.set(hName, deviceInfoModel);
     }
