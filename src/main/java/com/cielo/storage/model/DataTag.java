@@ -14,14 +14,18 @@ public class DataTag {
     }
 
     public DataTag(String... tags) {
-        tag = tags[0];
-        if (tags.length == 2) subTag = new DataTag(tags[1]);
+        DataTag dataTag = this;
+        for (int i = 0; i < tags.length; ++i) {
+            dataTag.setTag(tags[i]);
+            if (i != tags.length - 1) {
+                dataTag.setSubTag(new DataTag());
+                dataTag = dataTag.getSubTag();
+            }
+        }
     }
 
     public DataTag(String dataTagString) {
-        String[] tags = dataTagString.split("_", 2);
-        tag = tags[0];
-        if (tags.length == 2) subTag = new DataTag(tags[1]);
+        this(dataTagString.split("_"));
     }
 
     @Override

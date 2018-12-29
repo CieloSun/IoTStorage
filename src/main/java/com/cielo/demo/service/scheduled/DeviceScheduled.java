@@ -19,6 +19,6 @@ public class DeviceScheduled {
     //每周三15:00
     @Scheduled(cron = "0 0 15 ? * 3")
     public void archive() {
-        deviceConfig.getArchiveFunctionIdList().parallelStream().forEach(functionId -> deviceService.getAllDeviceId().parallelStream().forEach(deviceId -> timeDataUtil.archive(deviceService.hName(deviceId, functionId))));
+        deviceConfig.getArchiveFunctionIdList().parallelStream().forEach(functionId -> deviceService.getAllDeviceId().parallelStream().forEach(deviceId -> timeDataUtil.archive(deviceService.deviceTag(deviceId, functionId))));
     }
 }

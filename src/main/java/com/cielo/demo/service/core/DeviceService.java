@@ -20,12 +20,12 @@ public class DeviceService {
     @Autowired
     private TimeDataUtil timeDataUtil;
 
-    public DataTag hName(DeviceInfoModel deviceInfoModel) {
-        return hName(deviceInfoModel.getDeviceId(), deviceInfoModel.getFunctionId());
+    public DataTag deviceTag(DeviceInfoModel deviceInfoModel) {
+        return deviceTag(deviceInfoModel.getDeviceId(), deviceInfoModel.getFunctionId());
     }
 
-    public DataTag hName(String deviceId, Integer functionId) {
-        return new DataTag("device", deviceId, functionId.toString());
+    public DataTag deviceTag(String deviceId, Integer functionId) {
+        return new DataTag("device", functionId.toString(), deviceId);
     }
 
     public void editDevice(Device device) {
@@ -53,22 +53,22 @@ public class DeviceService {
     }
 
     public void saveDeviceInfo(DeviceInfoModel deviceInfoModel) {
-        DataTag hName = hName(deviceInfoModel);
+        DataTag hName = deviceTag(deviceInfoModel);
         ssdbUtil.hSet(hName, LATEST, deviceInfoModel);
         timeDataUtil.set(hName, deviceInfoModel);
     }
 
     public DeviceInfoModel getLatestDeviceInfo(String deviceId, Integer functionId) {
-        return ssdbUtil.hGet(hName(deviceId, functionId), LATEST, DeviceInfoModel.class);
+        return ssdbUtil.hGet(deviceTag(deviceId, functionId), LATEST, DeviceInfoModel.class);
     }
 
     //批量归档中获取多个对象
     public Map<Object, DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) {
-        return timeDataUtil.get(hName(deviceId, functionId), startDate, endDate, DeviceInfoModel.class);
+        return timeDataUtil.get(deviceTag(deviceId, functionId), startDate, endDate, DeviceInfoModel.class);
     }
 
     //批量归档中获取单个对象
     public DeviceInfoModel getDeviceInfo(String deviceId, Integer functionId, Long timestamp) throws Exception {
-        return timeDataUtil.get(hName(deviceId, functionId), timestamp, DeviceInfoModel.class);
+        return timeDataUtil.get(deviceTag(deviceId, functionId), timestamp, DeviceInfoModel.class);
     }
 }
