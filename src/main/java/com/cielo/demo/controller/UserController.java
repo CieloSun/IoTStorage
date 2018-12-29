@@ -59,7 +59,6 @@ public class UserController {
     }
 
 
-
     @GetMapping("role/{token}")
     public Role getRole(@PathVariable String token) throws Exception {
         return userService.getRole(token);

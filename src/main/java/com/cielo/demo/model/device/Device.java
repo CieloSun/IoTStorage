@@ -8,7 +8,8 @@ public class Device {
     private Double longitude;
     private Double latitude;
     private String tag;
-    public Device(String deviceId){
+
+    public Device(String deviceId) {
         this.deviceId = deviceId;
     }
 

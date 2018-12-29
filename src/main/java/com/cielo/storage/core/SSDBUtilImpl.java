@@ -220,8 +220,8 @@ class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     }
 
     @Override
-    public Response hMultiSet(DataTag dataTag, Map map){
-        return ssdb.multi_hset(dataTag.toString(),map);
+    public Response hMultiSet(DataTag dataTag, Map map) {
+        return ssdb.multi_hset(dataTag.toString(), map);
     }
 
     @Override

@@ -34,11 +34,9 @@ public class TestController {
     }
 
     @GetMapping("archive")
-    public void archive(){
+    public void archive() {
         deviceScheduled.archive();
     }
-
-
 
 
 }
