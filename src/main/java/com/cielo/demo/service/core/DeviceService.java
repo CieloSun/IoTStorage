@@ -14,9 +14,8 @@ import java.util.Map;
 @Service
 public class DeviceService {
     public static final DataTag DEVICE = new DataTag("configDevice");
-    public static final DataTag LATEST = new DataTag("latestDevice");
     @Autowired
-    private SSDBUtil ssdbUtil;
+    private SSDBUtil ssdbSync;
     @Autowired
     private TimeDataUtil timeDataUtil;
 
@@ -29,37 +28,36 @@ public class DeviceService {
     }
 
     public void editDevice(Device device) {
-        ssdbUtil.hSet(DEVICE, device.getDeviceId(), device);
+        ssdbSync.hSet(DEVICE, device.getDeviceId(), device);
     }
 
     public void deleteDevice(String deviceId) {
-        ssdbUtil.hDel(DEVICE, deviceId);
+        ssdbSync.hDel(DEVICE, deviceId);
     }
 
     public Device getDevice(String deviceId) {
-        return ssdbUtil.hGet(DEVICE, deviceId, Device.class);
+        return ssdbSync.hGet(DEVICE, deviceId, Device.class);
     }
 
     public List<String> getAllDeviceId() {
-        return ssdbUtil.hGetAllKeys(DEVICE);
+        return ssdbSync.hGetAllKeys(DEVICE);
     }
 
     public List<Device> getAllDevice() {
-        return ssdbUtil.hGetAll(DEVICE, Device.class);
+        return ssdbSync.hGetAll(DEVICE, Device.class);
     }
 
     public List<Device> getDevices(String... keys) {
-        return ssdbUtil.hMultiGet(Device.class, DEVICE, keys);
+        return ssdbSync.hMultiGet(Device.class, DEVICE, keys);
     }
 
     public void saveDeviceInfo(DeviceInfoModel deviceInfoModel) {
         DataTag hName = deviceTag(deviceInfoModel);
-        ssdbUtil.hSet(hName, LATEST, deviceInfoModel);
         timeDataUtil.set(hName, deviceInfoModel);
     }
 
     public DeviceInfoModel getLatestDeviceInfo(String deviceId, Integer functionId) {
-        return ssdbUtil.hGet(deviceTag(deviceId, functionId), LATEST, DeviceInfoModel.class);
+        return timeDataUtil.getLatest(deviceTag(deviceId, functionId), DeviceInfoModel.class);
     }
 
     //批量归档中获取多个对象

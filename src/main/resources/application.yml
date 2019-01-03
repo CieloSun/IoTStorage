@@ -6,6 +6,8 @@ server:
 ssdb:
   host: ws.cielosun.club
   port: 32768
+  host2: ws.cielosun.club
+  port2: 32772
   scan-number: 10000
 
 fdfs:
@@ -21,7 +23,9 @@ init:
 device-config:
   archive-function-id-list: [2]
 archive:
-  least-number: 0
-  archive: true
+  archive-tags: ["device_2"]
+  archive-interval: 10000
+  clear-interval: 60000
+  least-clear-num: 2
 device-server:
   port: 42001

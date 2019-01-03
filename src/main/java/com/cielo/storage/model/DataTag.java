@@ -32,15 +32,4 @@ public class DataTag {
     public String toString() {
         return subTag == null ? tag : tag + "_" + subTag.toString();
     }
-
-    public List<String> tags() {
-        List list = new ArrayList();
-        DataTag dataTag = this;
-        list.add(dataTag.tag);
-        while (dataTag.subTag != null) {
-            dataTag = dataTag.getSubTag();
-            list.add(dataTag.getTag());
-        }
-        return list;
-    }
 }

@@ -33,6 +33,10 @@ public class CollectionUtil {
     }
 
     public static <T> List<T> toList(Collection<T> collection) {
-        return collection.parallelStream().collect(Collectors.toList());
+        return collection.parallelStream().sorted().collect(Collectors.toList());
+    }
+
+    public static List<Long> toLongList(Collection<String> collection) {
+        return collection.parallelStream().map(str -> Long.parseLong(str)).sorted().collect(Collectors.toList());
     }
 }

@@ -12,6 +12,7 @@ import com.cielo.storage.api.SSDBUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
@@ -23,13 +24,16 @@ import java.util.HashSet;
 import java.util.stream.IntStream;
 
 @Service
-@Order(2)
+@Order(3)
 public class InitService implements CommandLineRunner {
     Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired
     private InitConfig initConfig;
     @Autowired
-    private SSDBUtil ssdbUtil;
+    private SSDBUtil ssdbSync;
+    @Autowired
+    @Qualifier("ssdb-local")
+    private SSDBUtil ssdbLocal;
     @Autowired
     private DeviceService deviceService;
 
@@ -83,14 +87,15 @@ public class InitService implements CommandLineRunner {
     //生成数据库初始数据
     public void initDatabase() {
         //清空数据库
-        ssdbUtil.multiDel("");
+        ssdbSync.multiDel("");
+        ssdbLocal.multiDel("");
         //初始化权限
-        ssdbUtil.set(Permission.key(Permission.EDIT_ROLE), new Permission(Permission.EDIT_ROLE, "edit permission"));
-        ssdbUtil.set(Permission.key(Permission.EDIT_USER), new Permission(Permission.EDIT_USER, "edit user"));
-        ssdbUtil.set(Permission.key(Permission.GET_USER), new Permission(Permission.GET_USER, "get user"));
-        ssdbUtil.set(Permission.key(Permission.SHOW_PERMISSION), new Permission(Permission.SHOW_PERMISSION, "show permission"));
+        ssdbSync.set(Permission.key(Permission.EDIT_ROLE), new Permission(Permission.EDIT_ROLE, "edit permission"));
+        ssdbSync.set(Permission.key(Permission.EDIT_USER), new Permission(Permission.EDIT_USER, "edit user"));
+        ssdbSync.set(Permission.key(Permission.GET_USER), new Permission(Permission.GET_USER, "get user"));
+        ssdbSync.set(Permission.key(Permission.SHOW_PERMISSION), new Permission(Permission.SHOW_PERMISSION, "show permission"));
         //初始化管理员角色
-        ssdbUtil.set(Role.key(Role.ADMIN), new Role(Role.ADMIN, new HashSet<Integer>() {
+        ssdbSync.set(Role.key(Role.ADMIN), new Role(Role.ADMIN, new HashSet<Integer>() {
             {
                 add(Permission.EDIT_ROLE);
                 add(Permission.GET_USER);
@@ -101,9 +106,9 @@ public class InitService implements CommandLineRunner {
             }
         }));
         //初始化普通用户角色
-        ssdbUtil.set(Role.key(Role.GUEST), new Role(Role.GUEST, new HashSet<>()));
+        ssdbSync.set(Role.key(Role.GUEST), new Role(Role.GUEST, new HashSet<>()));
         //初始化管理员用户
-        ssdbUtil.set(User.key("admin"), new User("admin", "admin", Role.ADMIN));
+        ssdbSync.set(User.key("admin"), new User("admin", "admin", Role.ADMIN));
         initDeviceInfoData(10);
         //生成海量训练数据
 //        initDeviceInfoData(50000, true);

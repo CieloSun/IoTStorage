@@ -8,30 +8,21 @@ import com.cielo.storage.model.DataTag;
 import com.cielo.storage.tool.CollectionUtil;
 import com.cielo.storage.tool.JSONUtil;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.nutz.ssdb4j.SSDBs;
 import org.nutz.ssdb4j.spi.Response;
 import org.nutz.ssdb4j.spi.SSDB;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 
-@Service
-@Order(1)
-class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
-    Logger logger = LoggerFactory.getLogger(this.getClass());
+abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     @Autowired
-    private SSDBConfig ssdbConfig;
-    private SSDB ssdb;
+    protected SSDBConfig ssdbConfig;
+    protected SSDB ssdb;
 
-    @Override
-    public void run(String... args) {
+    protected GenericObjectPoolConfig genericObjectPoolConfig() {
         //配置线程池
         GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
         genericObjectPoolConfig.setMaxIdle(ssdbConfig.getMaxIdle());
@@ -44,9 +35,11 @@ class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
         genericObjectPoolConfig.setTestOnReturn(ssdbConfig.isTestOnReturn());
         genericObjectPoolConfig.setTestWhileIdle(ssdbConfig.isTestWhileIdle());
         genericObjectPoolConfig.setLifo(ssdbConfig.isLifo());
-        ssdb = SSDBs.pool(ssdbConfig.getHost(), ssdbConfig.getPort(), ssdbConfig.getTimeout(), genericObjectPoolConfig);
-        logger.info("SSDB pool has init");
+        return genericObjectPoolConfig;
     }
+
+    @Override
+    public abstract void run(String... args);
 
     //设置一个基本类型值
     @Override
@@ -356,7 +349,7 @@ class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     @Override
     @Async
     public Response hDel(DataTag tag, Object fromKey, Object endKey) {
-        return ssdb.multi_hdel(tag.toString(), hScanKeys(tag, fromKey, endKey).toArray());
+        return ssdb.multi_hdel(tag.toString(), hScanKeys(tag, fromKey, endKey));
     }
 
     @Override

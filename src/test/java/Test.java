@@ -27,7 +27,7 @@ public class Test {
 //        List<User> users = JSON.parseArray(s, User.class);
 //        System.out.println(users.get(0));
 //        System.out.println(users.get(1));
-//        list.clear();
+//        list.del();
 //        list.add(s);
 //        list.add(s);
 //        s=JSONUtil.mergeList(list);

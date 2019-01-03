@@ -11,8 +11,12 @@ import org.springframework.stereotype.Component;
 public class SSDBConfig {
     @Value("localhost")
     private String host;
+    @Value("localhost")
+    private String host2;
     @Value("8888")
     private Integer port;
+    @Value("8889")
+    private Integer port2;
     @Value("10000")
     private Integer timeout;
     @Value("3")
