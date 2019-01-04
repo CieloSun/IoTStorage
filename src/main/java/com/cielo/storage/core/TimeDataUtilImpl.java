@@ -37,7 +37,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     //获取hashMap中最新归档时间
     private Long getLatestArchiveTime(DataTag dataTag) {
         Response response = ssdbSync.hGet(LATEST_FILE, dataTag.toString());
-        if (response.notFound()) return 0l;
+        if (response.notFound()) return 0L;
         return response.asLong();
     }
 
@@ -45,7 +45,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     private String searchFile(DataTag dataTag, Long timestamp) {
         Map<String, String> files = ssdbSync.hScan(dataTag, timestamp, timestamp + archiveConfig.getArchiveInterval());
         List<Long> timeList = CollectionUtil.toLongList(files.keySet());
-        return files.get(timeList.get(CollectionUtil.lowerBound(timeList, timestamp)));
+        return files.get(timeList.get(CollectionUtil.lowerBound(timeList, timestamp)).toString());
     }
 
     //该方法仅做一个大概搜索，搜索的内容可能略多于所要的内容
@@ -83,7 +83,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     //获取可能归档的hashMap中某段数据,由于Lambda要求所在方法可重入，因而拆分
     @Override
     public <T> Map<Object, T> get(DataTag dataTag, Long startTime, Long endTime, Class<T> clazz) {
-        if (startTime == null) startTime = 0l;
+        if (startTime == null) startTime = 0L;
         if (endTime == null) endTime = System.currentTimeMillis();
         return getMap(dataTag, startTime, endTime, clazz);
     }
