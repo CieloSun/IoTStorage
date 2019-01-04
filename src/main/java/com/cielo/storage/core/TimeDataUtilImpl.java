@@ -44,8 +44,8 @@ class TimeDataUtilImpl implements TimeDataUtil {
     //获取某一数据tag距离给定时间戳最近的归档时间
     private String searchFile(DataTag dataTag, Long timestamp) {
         Map<String, String> files = ssdbSync.hScan(dataTag, timestamp, timestamp + archiveConfig.getArchiveInterval());
-        List<Long> timeList = CollectionUtil.toLongList(files.keySet());
-        return files.get(timeList.get(CollectionUtil.lowerBound(timeList, timestamp)).toString());
+        List<Long> timeList = CollectionUtil.parseLongList(files.keySet());
+        return files.get(CollectionUtil.lowerBoundVal(timeList, timestamp));
     }
 
     //该方法仅做一个大概搜索，搜索的内容可能略多于所要的内容

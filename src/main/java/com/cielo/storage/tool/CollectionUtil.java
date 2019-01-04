@@ -20,6 +20,10 @@ public class CollectionUtil {
         return low;
     }
 
+    public static <T> Comparable<? super T> lowerBoundVal(List<? extends Comparable<? super T>> list, T key) {
+        return list.get(lowerBound(list, key));
+    }
+
     //用于流中基于类对象的某个属性去重,用于lambda filter
     public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
@@ -36,7 +40,7 @@ public class CollectionUtil {
         return collection.parallelStream().sorted().collect(Collectors.toList());
     }
 
-    public static List<Long> toLongList(Collection<String> collection) {
-        return collection.parallelStream().map(str -> Long.parseLong(str)).sorted().collect(Collectors.toList());
+    public static List<Long> parseLongList(Collection<String> collection) {
+        return collection.parallelStream().map(Long::valueOf).sorted().collect(Collectors.toList());
     }
 }
