@@ -9,6 +9,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -37,11 +39,17 @@ public class ArchiveConfig {
 
     @Bean
     public Trigger archiveTrigger() {
-        return TriggerBuilder.newTrigger().forJob(archiveJobDetail()).withIdentity("archiveJob-trigger").withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(archiveInterval).repeatForever()).build();
+        return TriggerBuilder.newTrigger().forJob(archiveJobDetail()).withIdentity("archiveJob-trigger")
+                .startAt(new Date(System.currentTimeMillis() + archiveInterval))
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(archiveInterval)
+                        .repeatForever()).build();
     }
 
     @Bean
     public Trigger clearTrigger() {
-        return TriggerBuilder.newTrigger().forJob(clearJobDetail()).withIdentity("clearJob-trigger").withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(clearInterval).repeatForever()).build();
+        return TriggerBuilder.newTrigger().forJob(clearJobDetail()).withIdentity("clearJob-trigger")
+                .startAt(new Date(System.currentTimeMillis() + clearInterval))
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(clearInterval)
+                        .repeatForever()).build();
     }
 }

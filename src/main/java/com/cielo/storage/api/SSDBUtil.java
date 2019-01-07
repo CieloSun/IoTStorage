@@ -54,6 +54,15 @@ public interface SSDBUtil {
     //基于前缀弹出Map
     Map<String, String> popScan(Object prefix);
 
+    Response lowerBoundKey(Object key);
+
+    String lowerBoundVal(Object key);
+
+    Response lowerBound(Object key);
+
+    //获取所给key最接近的下一个值
+    <T> T lowerBound(Object key, Class<T> clazz);
+
     //获取计数，数量不超过配置中的scanNumber
     int count(Object prefix);
 
@@ -141,6 +150,14 @@ public interface SSDBUtil {
     <T> Map<Object, T> hScan(DataTag tag, Object fromKey, Object endKey, Class<T> clazz);
 
     <T> Map<Object, T> hScan(DataTag tag, Object prefix, Class<T> clazz);
+
+    Response hLowerBoundKey(DataTag tag, Object key);
+
+    Response hLowerBound(DataTag tag, Object key);
+
+    String hLowerBoundVal(DataTag tag, Object key);
+
+    <T> T hLowerBound(DataTag tag, Object key, Class<T> clazz);
 
     Response hDel(DataTag tag, Object key);
 

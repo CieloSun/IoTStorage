@@ -135,6 +135,28 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
         return popScan(prefix, prefix + "}");
     }
 
+    @Override
+    public Response lowerBoundKey(Object key) {
+        return ssdb.keys(key, "", 1);
+    }
+
+    @Override
+    public Response lowerBound(Object key) {
+        return ssdb.scan(key, "", 1);
+    }
+
+    @Override
+    public <T> T lowerBound(Object key, Class<T> clazz) {
+        Response response = lowerBound(key);
+        if (response.notFound()) return null;
+        return JSON.parseObject(response.asString(), clazz);
+    }
+
+    @Override
+    public String lowerBoundVal(Object key) {
+        return lowerBound(key).mapString().values().iterator().next();
+    }
+
     //获取计数，数量不超过配置中的scanNumber
     @Override
     public int count(Object prefix) {
@@ -339,6 +361,28 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     @Override
     public <T> Map<Object, T> hScan(DataTag tag, Object prefix, Class<T> clazz) {
         return JSONUtil.toMap(hScan(tag, prefix), clazz);
+    }
+
+    @Override
+    public Response hLowerBoundKey(DataTag tag, Object key) {
+        return ssdb.hkeys(tag.toString(), key, "", 1);
+    }
+
+    @Override
+    public Response hLowerBound(DataTag tag, Object key) {
+        return ssdb.hscan(tag.toString(), key, "", 1);
+    }
+
+    @Override
+    public <T> T hLowerBound(DataTag tag, Object key, Class<T> clazz) {
+        Response response = hLowerBound(tag, key);
+        if (response.notFound()) return null;
+        return JSON.parseObject(response.asString(), clazz);
+    }
+
+    @Override
+    public String hLowerBoundVal(DataTag tag, Object key) {
+        return hLowerBound(tag, key).mapString().values().iterator().next();
     }
 
     @Override

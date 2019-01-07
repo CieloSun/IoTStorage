@@ -67,8 +67,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public <T> T get(DataTag dataTag, Long timestamp, Class<T> clazz) throws Exception {
         T t = ssdbLocal.hGet(dataTag, timestamp, clazz);
         if (t != null) return t;
-        Map<String, String> files = ssdbSync.hScan(dataTag, timestamp, timestamp + archiveConfig.getArchiveInterval());
-        return fdfsUtil.downloadMap(files.get(CollectionUtil.lowerBoundVal(CollectionUtil.parseLongList(files.keySet()), timestamp)), clazz).get(timestamp);
+        return fdfsUtil.downloadMap(ssdbSync.hLowerBoundVal(dataTag, timestamp), clazz).get(timestamp);
     }
 
     //获取可能归档的hashMap中某段数据,由于Lambda要求所在方法可重入，因而拆分
@@ -84,7 +83,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
         if (endTime >= latestSyncArchiveTime) map.putAll(ssdbLocal.hScan(dataTag, startTime, endTime, clazz));
         if (startTime < latestSyncArchiveTime)
-            ssdbSync.hScan(dataTag, startTime, endTime + archiveConfig.getArchiveInterval()).values()
+            ssdbSync.hScan(dataTag, startTime, ssdbSync.hLowerBoundKey(dataTag, endTime)).values()
                     .parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId, clazz))).forEach(map::putAll);
         map.keySet().parallelStream().filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
         return map;

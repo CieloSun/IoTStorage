@@ -44,7 +44,7 @@ public class DeviceController {
     }
 
     @GetMapping("latestInfo/{token}")
-    public DeviceInfoModel getLatest(@PathVariable String token, String deviceId, Integer functionId) {
+    public DeviceInfoModel getLatest(@PathVariable String token, String deviceId, Integer functionId) throws Exception {
         return deviceService.getLatestDeviceInfo(deviceId, functionId);
     }
 
