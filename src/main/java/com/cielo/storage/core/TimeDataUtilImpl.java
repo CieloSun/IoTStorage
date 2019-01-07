@@ -16,13 +16,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 //用于管理较小value，采用小数据合并的方式归档SSDB中数据
 @Service
 class TimeDataUtilImpl implements TimeDataUtil {
-    private static final DataTag LATEST_FILE = new DataTag("latest_file");
+    private static final DataTag LATEST_ARCHIVE = new DataTag("latest_file");
     private static final String LATEST_VAL = "latest_val";
+    private static final String LATEST_TIME = "latest_time";
     Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired
     private FDFSUtil fdfsUtil;
@@ -34,41 +37,28 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Autowired
     private ArchiveConfig archiveConfig;
 
-    //获取hashMap中最新归档时间
-    private Long getLatestArchiveTime(DataTag dataTag) {
-        Response response = ssdbSync.hGet(LATEST_FILE, dataTag.toString());
+    //获取ssdb-sync中最新归档时间
+    private Long latestSyncArchiveTime(DataTag dataTag) {
+        Response response = ssdbSync.hGet(dataTag, LATEST_ARCHIVE);
         if (response.notFound()) return 0L;
         return response.asLong();
     }
 
-    //获取某一数据tag距离给定时间戳最近的归档时间
-    private String searchFile(DataTag dataTag, Long timestamp) {
-        Map<String, String> files = ssdbSync.hScan(dataTag, timestamp, timestamp + archiveConfig.getArchiveInterval());
-        List<Long> timeList = CollectionUtil.parseLongList(files.keySet());
-        return files.get(CollectionUtil.lowerBoundVal(timeList, timestamp));
-    }
-
-    //该方法仅做一个大概搜索，搜索的内容可能略多于所要的内容
-    private Collection<String> searchFile(DataTag dataTag, Long startTime, Long endTime) {
-        return ssdbSync.hScan(dataTag, startTime, endTime + archiveConfig.getArchiveInterval()).values();
-    }
-
-    private <T> Map<Object, T> getMap(DataTag dataTag, Long startTime, Long endTime, Class<T> clazz) {
-        Map<Object, T> map = new HashMap<>();
-        Long latestFileTime = getLatestArchiveTime(dataTag);
-        if (endTime >= latestFileTime) map.putAll(ssdbLocal.hScan(dataTag, startTime, endTime, clazz));
-        if (startTime < latestFileTime)
-            searchFile(dataTag, startTime, endTime).parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId, clazz))).forEach(map::putAll);
-        map.keySet().parallelStream().filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
-        return map;
+    //获取ssdb-local中最新归档时间
+    private Long latestLocalArchiveTime(DataTag dataTag) {
+        Response response = ssdbLocal.hGet(dataTag, LATEST_ARCHIVE);
+        if (response.notFound()) return 0L;
+        return response.asLong();
     }
 
     @Override
     public void set(DataTag dataTag, Object val) {
         val = JSON.toJSONString(val);
         Map map = new HashMap();
-        map.put(System.currentTimeMillis(), val);
+        long timestamp = System.currentTimeMillis();
+        map.put(timestamp, val);
         map.put(LATEST_VAL, val);
+        map.put(LATEST_TIME, timestamp);
         ssdbLocal.hMultiSet(dataTag, map);
     }
 
@@ -77,7 +67,8 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public <T> T get(DataTag dataTag, Long timestamp, Class<T> clazz) throws Exception {
         T t = ssdbLocal.hGet(dataTag, timestamp, clazz);
         if (t != null) return t;
-        return fdfsUtil.downloadMap(searchFile(dataTag, timestamp), clazz).get(timestamp);
+        Map<String, String> files = ssdbSync.hScan(dataTag, timestamp, timestamp + archiveConfig.getArchiveInterval());
+        return fdfsUtil.downloadMap(files.get(CollectionUtil.lowerBoundVal(CollectionUtil.parseLongList(files.keySet()), timestamp)), clazz).get(timestamp);
     }
 
     //获取可能归档的hashMap中某段数据,由于Lambda要求所在方法可重入，因而拆分
@@ -88,9 +79,23 @@ class TimeDataUtilImpl implements TimeDataUtil {
         return getMap(dataTag, startTime, endTime, clazz);
     }
 
+    private <T> Map<Object, T> getMap(DataTag dataTag, Long startTime, Long endTime, Class<T> clazz) {
+        Map<Object, T> map = new HashMap<>();
+        Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
+        if (endTime >= latestSyncArchiveTime) map.putAll(ssdbLocal.hScan(dataTag, startTime, endTime, clazz));
+        if (startTime < latestSyncArchiveTime)
+            ssdbSync.hScan(dataTag, startTime, endTime + archiveConfig.getArchiveInterval()).values()
+                    .parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId, clazz))).forEach(map::putAll);
+        map.keySet().parallelStream().filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
+        return map;
+    }
+
     @Override
-    public <T> T getLatest(DataTag dataTag, Class<T> clazz) {
-        return ssdbLocal.hGet(dataTag, LATEST_VAL, clazz);
+    public <T> T getLatest(DataTag dataTag, Class<T> clazz) throws Exception {
+        Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
+        long latestLocalTime = ssdbLocal.hGet(dataTag, LATEST_TIME).asLong();
+        if (latestLocalTime > latestSyncArchiveTime) return ssdbLocal.hGet(dataTag, LATEST_VAL, clazz);
+        else return get(dataTag, latestSyncArchiveTime, clazz);
     }
 
     @Override
@@ -110,12 +115,15 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public void archiveJob() {
         archiveConfig.getArchiveTags().parallelStream().forEach(tagString -> ssdbLocal.hScanName(tagString).parallelStream().map(DataTag::new).forEach(tag -> {
             long archiveTime = System.currentTimeMillis();
-            Map<String, String> map = ssdbLocal.hScan(tag, getLatestArchiveTime(tag), archiveTime);
-            if (map.size() != 0) {
-                ssdbSync.hSetVal(LATEST_FILE, tag.toString(), archiveTime);
+            Map<String, String> valueMap = ssdbLocal.hScan(tag, latestLocalArchiveTime(tag), archiveTime);
+            if (valueMap.size() != 0) {
                 try {
-                    String fileId = fdfsUtil.upload(JSONUtil.toMap(map));
-                    ssdbSync.hSetVal(tag, archiveTime, fileId);
+                    String fileId = fdfsUtil.upload(JSONUtil.toMap(valueMap));
+                    Map syncMap = new HashMap();
+                    ssdbLocal.hSet(tag, LATEST_ARCHIVE, archiveTime);
+                    syncMap.put(LATEST_ARCHIVE, archiveTime);
+                    syncMap.put(archiveTime, fileId);
+                    ssdbSync.hMultiSet(tag, syncMap);
                     logger.info(tag + ":" + fileId + " has archived on " + new Date(archiveTime));
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -127,6 +135,6 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Override
     public void clearJob() {
         archiveConfig.getArchiveTags().parallelStream().forEach(tagString -> ssdbLocal.hScanName(tagString).parallelStream().map(DataTag::new)
-                .filter(tag -> ssdbLocal.hSize(tag) > archiveConfig.getLeastClearNum()).forEach(tag -> ssdbLocal.hDel(tag, 0, getLatestArchiveTime(tag))));
+                .filter(tag -> ssdbLocal.hSize(tag) > archiveConfig.getLeastClearNum()).forEach(tag -> ssdbLocal.hDel(tag, 0, latestLocalArchiveTime(tag))));
     }
 }

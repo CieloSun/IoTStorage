@@ -56,7 +56,7 @@ public class DeviceService {
         timeDataUtil.set(hName, deviceInfoModel);
     }
 
-    public DeviceInfoModel getLatestDeviceInfo(String deviceId, Integer functionId) {
+    public DeviceInfoModel getLatestDeviceInfo(String deviceId, Integer functionId) throws Exception {
         return timeDataUtil.getLatest(deviceTag(deviceId, functionId), DeviceInfoModel.class);
     }
 
