@@ -13,10 +13,10 @@ ssdb:
 fdfs:
   assign-group: false
   group: group2
-  config-file: fdfs_client.conf
   dictionary-file: device.dic
   compression-level: 3
   compression: true
+  trackers: ["ws.cielosun.club:22122"]
 
 init:
   init-database: true
@@ -24,8 +24,9 @@ device-config:
   archive-function-id-list: [2]
 archive:
   archive-tags: ["device_2"]
-  archive-interval: 10000
-  clear-interval: 60000
+  # 归档间隔默认为
+  archive-interval: 1800000
+  clear-interval: 86400000
   least-clear-num: 2
 device-server:
   port: 42001

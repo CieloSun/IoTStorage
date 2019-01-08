@@ -48,20 +48,11 @@ public interface SSDBUtil {
     //基于首尾字符串获取值并反序列化
     <T> List<T> scanValues(Object fromKey, Object endKey, Class<T> clazz);
 
-    //基于首尾字符串弹出Map
-    Map<String, String> popScan(Object fromKey, Object endKey);
-
-    //基于前缀弹出Map
-    Map<String, String> popScan(Object prefix);
-
     Response lowerBoundKey(Object key);
 
     String lowerBoundVal(Object key);
 
     Response lowerBound(Object key);
-
-    //获取所给key最接近的下一个值
-    <T> T lowerBound(Object key, Class<T> clazz);
 
     //获取计数，数量不超过配置中的scanNumber
     int count(Object prefix);
@@ -117,10 +108,6 @@ public interface SSDBUtil {
 
     List<String> hGetAllKeys(DataTag tag);
 
-    Response hPopAll(DataTag tag);
-
-    <T> List<T> hPopAll(DataTag tag, Class<T> clazz);
-
     Integer hSize(DataTag tag);
 
     boolean hExists(DataTag tag, Object key);
@@ -156,8 +143,6 @@ public interface SSDBUtil {
     Response hLowerBound(DataTag tag, Object key);
 
     String hLowerBoundVal(DataTag tag, Object key);
-
-    <T> T hLowerBound(DataTag tag, Object key, Class<T> clazz);
 
     Response hDel(DataTag tag, Object key);
 

@@ -19,8 +19,10 @@ import java.util.List;
 public class ArchiveConfig {
     @Value("[\"device\"]")
     private List<String> archiveTags;
-    @Value("600000")
+    //归档间隔默认为30分钟
+    @Value("1800000")
     private Long archiveInterval;
+    //清理间隔默认为24小时
     @Value("86400000")
     private Long clearInterval;
     @Value("0")

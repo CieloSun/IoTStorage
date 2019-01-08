@@ -124,13 +124,6 @@
             <scope>compile</scope>
         </dependency>
 
-        <!--fastdfs-->
-        <dependency>
-            <groupId>net.oschina.zcx7878</groupId>
-            <artifactId>fastdfs-client-java</artifactId>
-            <version>1.27.0.0</version>
-        </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.nutz/ssdb4j -->
         <dependency>
             <groupId>org.nutz</groupId>

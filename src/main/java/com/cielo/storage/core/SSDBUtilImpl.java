@@ -121,20 +121,6 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
         return JSON.parseArray(scanValues(fromKey, endKey), clazz);
     }
 
-    //基于首尾字符串弹出Map
-    @Override
-    public Map<String, String> popScan(Object fromKey, Object endKey) {
-        Map<String, String> map = scan(fromKey, endKey);
-        multiDel(map.keySet().toArray());
-        return map;
-    }
-
-    //基于前缀弹出Map
-    @Override
-    public Map<String, String> popScan(Object prefix) {
-        return popScan(prefix, prefix + "}");
-    }
-
     @Override
     public Response lowerBoundKey(Object key) {
         return ssdb.keys(key, "", 1);
@@ -143,13 +129,6 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     @Override
     public Response lowerBound(Object key) {
         return ssdb.scan(key, "", 1);
-    }
-
-    @Override
-    public <T> T lowerBound(Object key, Class<T> clazz) {
-        Response response = lowerBound(key);
-        if (response.notFound()) return null;
-        return JSON.parseObject(response.asString(), clazz);
     }
 
     @Override
@@ -277,18 +256,6 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     }
 
     @Override
-    public Response hPopAll(DataTag tag) {
-        Response response = hGetAll(tag);
-        hClear(tag);
-        return response;
-    }
-
-    @Override
-    public <T> List<T> hPopAll(DataTag tag, Class<T> clazz) {
-        return JSON.parseArray(JSONUtil.toList(CollectionUtil.toList(hPopAll(tag).mapString().values())), clazz);
-    }
-
-    @Override
     public Integer hSize(DataTag tag) {
         return ssdb.hsize(tag.toString()).asInt();
     }
@@ -371,13 +338,6 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     @Override
     public Response hLowerBound(DataTag tag, Object key) {
         return ssdb.hscan(tag.toString(), key, "", 1);
-    }
-
-    @Override
-    public <T> T hLowerBound(DataTag tag, Object key, Class<T> clazz) {
-        Response response = hLowerBound(tag, key);
-        if (response.notFound()) return null;
-        return JSON.parseObject(response.asString(), clazz);
     }
 
     @Override

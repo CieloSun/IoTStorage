@@ -6,7 +6,6 @@ import com.cielo.storage.api.SSDBUtil;
 import com.cielo.storage.api.TimeDataUtil;
 import com.cielo.storage.config.ArchiveConfig;
 import com.cielo.storage.model.DataTag;
-import com.cielo.storage.tool.CollectionUtil;
 import com.cielo.storage.tool.JSONUtil;
 import com.cielo.storage.tool.Try;
 import org.nutz.ssdb4j.spi.Response;
@@ -16,9 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 //用于管理较小value，采用小数据合并的方式归档SSDB中数据
 @Service
@@ -83,8 +80,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
         if (endTime >= latestSyncArchiveTime) map.putAll(ssdbLocal.hScan(dataTag, startTime, endTime, clazz));
         if (startTime < latestSyncArchiveTime)
-            ssdbSync.hScan(dataTag, startTime, ssdbSync.hLowerBoundKey(dataTag, endTime)).values()
-                    .parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId, clazz))).forEach(map::putAll);
+            ssdbSync.hScan(dataTag, startTime, ssdbSync.hLowerBoundKey(dataTag, endTime)).values().parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId, clazz))).forEach(map::putAll);
         map.keySet().parallelStream().filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
         return map;
     }
@@ -100,26 +96,34 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Override
     public void del(DataTag dataTag) {
         ssdbLocal.hClear(dataTag);
+        fdfsUtil.multiDelete(ssdbSync.hGetAll(dataTag).mapString().values());
         ssdbSync.hClear(dataTag);
     }
 
     @Override
     public void del(DataTag dataTag, Long startTime, Long endTime) {
         ssdbLocal.hDel(dataTag, startTime, endTime);
+        fdfsUtil.multiDelete(ssdbSync.hScan(dataTag, startTime, endTime).values());
         ssdbSync.hDel(dataTag, startTime, endTime);
+    }
+
+    private Set<DataTag> configTags() {
+        Set<DataTag> tagSet = new HashSet<>();
+        archiveConfig.getArchiveTags().parallelStream().forEach(tagString -> ssdbLocal.hScanName(tagString).parallelStream().map(DataTag::new).forEach(tagSet::add));
+        return tagSet;
     }
 
     //hashMap中数据归档,hashMap中key为时间戳，val为JSON对象
     @Override
     public void archiveJob() {
-        archiveConfig.getArchiveTags().parallelStream().forEach(tagString -> ssdbLocal.hScanName(tagString).parallelStream().map(DataTag::new).forEach(tag -> {
+        configTags().parallelStream().forEach(tag -> {
             long archiveTime = System.currentTimeMillis();
             Map<String, String> valueMap = ssdbLocal.hScan(tag, latestLocalArchiveTime(tag), archiveTime);
             if (valueMap.size() != 0) {
                 try {
+                    ssdbLocal.hSet(tag, LATEST_ARCHIVE, archiveTime);
                     String fileId = fdfsUtil.upload(JSONUtil.toMap(valueMap));
                     Map syncMap = new HashMap();
-                    ssdbLocal.hSet(tag, LATEST_ARCHIVE, archiveTime);
                     syncMap.put(LATEST_ARCHIVE, archiveTime);
                     syncMap.put(archiveTime, fileId);
                     ssdbSync.hMultiSet(tag, syncMap);
@@ -128,12 +132,11 @@ class TimeDataUtilImpl implements TimeDataUtil {
                     e.printStackTrace();
                 }
             } else logger.info("Nothing needs to archive.");
-        }));
+        });
     }
 
     @Override
     public void clearJob() {
-        archiveConfig.getArchiveTags().parallelStream().forEach(tagString -> ssdbLocal.hScanName(tagString).parallelStream().map(DataTag::new)
-                .filter(tag -> ssdbLocal.hSize(tag) > archiveConfig.getLeastClearNum()).forEach(tag -> ssdbLocal.hDel(tag, 0, latestLocalArchiveTime(tag))));
+        configTags().parallelStream().filter(tag -> ssdbLocal.hSize(tag) > archiveConfig.getLeastClearNum()).forEach(tag -> ssdbLocal.hDel(tag, 0, latestLocalArchiveTime(tag)));
     }
 }

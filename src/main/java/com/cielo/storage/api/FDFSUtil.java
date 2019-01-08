@@ -1,7 +1,8 @@
 package com.cielo.storage.api;
 
-import org.csource.fastdfs.FileInfo;
+import com.cielo.storage.fastdfs.FileInfo;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +21,9 @@ public interface FDFSUtil {
 
     byte[] downloadBytes(String path) throws Exception;
 
-    Integer delete(String path) throws Exception;
+    void delete(String path);
+
+    void multiDelete(Collection<String> paths);
 
     FileInfo info(String path) throws Exception;
 }
