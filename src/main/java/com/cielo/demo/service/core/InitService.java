@@ -12,7 +12,6 @@ import com.cielo.storage.api.KVStoreUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
@@ -30,10 +29,7 @@ public class InitService implements CommandLineRunner {
     @Autowired
     private InitConfig initConfig;
     @Autowired
-    private KVStoreUtil ssdbSync;
-    @Autowired
-    @Qualifier("kv-local")
-    private KVStoreUtil ssdbLocal;
+    private KVStoreUtil kvStoreUtil;
     @Autowired
     private DeviceService deviceService;
 
@@ -87,15 +83,14 @@ public class InitService implements CommandLineRunner {
     //生成数据库初始数据
     public void initDatabase() {
         //清空数据库
-        ssdbSync.multiDel("");
-        ssdbLocal.multiDel("");
+        kvStoreUtil.multiDel("");
         //初始化权限
-        ssdbSync.set(Permission.key(Permission.EDIT_ROLE), new Permission(Permission.EDIT_ROLE, "edit permission"));
-        ssdbSync.set(Permission.key(Permission.EDIT_USER), new Permission(Permission.EDIT_USER, "edit user"));
-        ssdbSync.set(Permission.key(Permission.GET_USER), new Permission(Permission.GET_USER, "get user"));
-        ssdbSync.set(Permission.key(Permission.SHOW_PERMISSION), new Permission(Permission.SHOW_PERMISSION, "show permission"));
+        kvStoreUtil.set(Permission.key(Permission.EDIT_ROLE), new Permission(Permission.EDIT_ROLE, "edit permission"));
+        kvStoreUtil.set(Permission.key(Permission.EDIT_USER), new Permission(Permission.EDIT_USER, "edit user"));
+        kvStoreUtil.set(Permission.key(Permission.GET_USER), new Permission(Permission.GET_USER, "get user"));
+        kvStoreUtil.set(Permission.key(Permission.SHOW_PERMISSION), new Permission(Permission.SHOW_PERMISSION, "show permission"));
         //初始化管理员角色
-        ssdbSync.set(Role.key(Role.ADMIN), new Role(Role.ADMIN, new HashSet<Integer>() {
+        kvStoreUtil.set(Role.key(Role.ADMIN), new Role(Role.ADMIN, new HashSet<Integer>() {
             {
                 add(Permission.EDIT_ROLE);
                 add(Permission.GET_USER);
@@ -106,9 +101,9 @@ public class InitService implements CommandLineRunner {
             }
         }));
         //初始化普通用户角色
-        ssdbSync.set(Role.key(Role.GUEST), new Role(Role.GUEST, new HashSet<>()));
+        kvStoreUtil.set(Role.key(Role.GUEST), new Role(Role.GUEST, new HashSet<>()));
         //初始化管理员用户
-        ssdbSync.set(User.key("admin"), new User("admin", "admin", Role.ADMIN));
+        kvStoreUtil.set(User.key("admin"), new User("admin", "admin", Role.ADMIN));
         initDeviceInfoData(10);
         //生成海量训练数据
 //        initDeviceInfoData(50000, true);
