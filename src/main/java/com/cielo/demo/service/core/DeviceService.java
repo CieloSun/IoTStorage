@@ -15,7 +15,7 @@ import java.util.Map;
 public class DeviceService {
     public static final DataTag DEVICE = new DataTag("configDevice");
     @Autowired
-    private KVStoreUtil ssdbSync;
+    private KVStoreUtil kvStoreUtil;
     @Autowired
     private TimeDataUtil timeDataUtil;
 
@@ -28,27 +28,27 @@ public class DeviceService {
     }
 
     public void editDevice(Device device) {
-        ssdbSync.hSet(DEVICE, device.getDeviceId(), device);
+        kvStoreUtil.hSet(DEVICE, device.getDeviceId(), device);
     }
 
     public void deleteDevice(String deviceId) {
-        ssdbSync.hDel(DEVICE, deviceId);
+        kvStoreUtil.hDel(DEVICE, deviceId);
     }
 
     public Device getDevice(String deviceId) {
-        return ssdbSync.hGet(DEVICE, deviceId, Device.class);
+        return kvStoreUtil.hGet(DEVICE, deviceId, Device.class);
     }
 
     public List<String> getAllDeviceId() {
-        return ssdbSync.hGetAllKeys(DEVICE);
+        return kvStoreUtil.hGetAllKeys(DEVICE);
     }
 
     public List<Device> getAllDevice() {
-        return ssdbSync.hGetAll(DEVICE, Device.class);
+        return kvStoreUtil.hGetAll(DEVICE, Device.class);
     }
 
     public List<Device> getDevices(String... keys) {
-        return ssdbSync.hMultiGet(Device.class, DEVICE, keys);
+        return kvStoreUtil.hMultiGet(Device.class, DEVICE, keys);
     }
 
     public void saveDeviceInfo(DeviceInfoModel deviceInfoModel) {

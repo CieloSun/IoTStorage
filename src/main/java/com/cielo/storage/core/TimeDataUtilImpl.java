@@ -28,7 +28,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Autowired
     private FDFSUtil fdfsUtil;
     @Autowired
-    private KVStoreUtil ssdbSync;
+    private KVStoreUtil kvStoreUtil;
     @Autowired
     private CacheUtil cacheUtil;
     @Autowired
@@ -36,7 +36,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
 
     //获取ssdb-sync中最新归档时间
     private Long latestSyncArchiveTime(DataTag dataTag) {
-        Response response = ssdbSync.hGet(dataTag, LATEST_ARCHIVE);
+        Response response = kvStoreUtil.hGet(dataTag, LATEST_ARCHIVE);
         if (response.notFound()) return 0L;
         return response.asLong();
     }
@@ -62,7 +62,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public <T> T get(DataTag dataTag, Long timestamp, Class<T> clazz) throws Exception {
         T t = cacheUtil.get(dataTag, timestamp, clazz);
         if (t != null) return t;
-        return (T) fdfsUtil.downloadMap(ssdbSync.hLowerBoundVal(dataTag, timestamp)).get(timestamp);
+        return (T) fdfsUtil.downloadMap(kvStoreUtil.hLowerBoundVal(dataTag, timestamp)).get(timestamp);
     }
 
     //获取可能归档的hashMap中某段数据,由于Lambda要求所在方法可重入，因而拆分
@@ -78,7 +78,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
         if (endTime >= latestSyncArchiveTime) map.putAll(cacheUtil.scan(dataTag, startTime, endTime, clazz));
         if (startTime < latestSyncArchiveTime)
-            ssdbSync.hScan(dataTag, startTime, ssdbSync.hLowerBoundKey(dataTag, endTime)).values().parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId))).forEach(map::putAll);
+            kvStoreUtil.hScan(dataTag, startTime, kvStoreUtil.hLowerBoundKey(dataTag, endTime)).values().parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId))).forEach(map::putAll);
         map.keySet().parallelStream().filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
         return map;
     }
@@ -95,16 +95,16 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public void del(DataTag dataTag) {
         cacheUtil.clear(dataTag);
         if (timeDataConfig.getDeleteValueTogether())
-            fdfsUtil.multiDelete(ssdbSync.hGetAll(dataTag).mapString().values());
-        ssdbSync.hClear(dataTag);
+            fdfsUtil.multiDelete(kvStoreUtil.hGetAll(dataTag).mapString().values());
+        kvStoreUtil.hClear(dataTag);
     }
 
     @Override
     public void del(DataTag dataTag, Long startTime, Long endTime) {
         cacheUtil.delete(dataTag, startTime, endTime);
         if (timeDataConfig.getDeleteValueTogether())
-            fdfsUtil.multiDelete(ssdbSync.hScan(dataTag, startTime, endTime).values());
-        ssdbSync.hDel(dataTag, startTime, endTime);
+            fdfsUtil.multiDelete(kvStoreUtil.hScan(dataTag, startTime, endTime).values());
+        kvStoreUtil.hDel(dataTag, startTime, endTime);
     }
 
     private Set<DataTag> configTags() {
@@ -133,7 +133,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
                     Map<Object, Object> syncMap = new HashMap<>();
                     syncMap.put(LATEST_ARCHIVE, archiveTime);
                     syncMap.put(archiveTime, fileId);
-                    ssdbSync.hMultiSet(tag, syncMap);
+                    kvStoreUtil.hMultiSet(tag, syncMap);
                     logger.info(tag + ":" + fileId + " has archived on " + new Date(archiveTime));
                 } else logger.info(tag + " cannot archive.");
             } else logger.info("Nothing needs to archive.");

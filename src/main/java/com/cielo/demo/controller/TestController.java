@@ -48,9 +48,4 @@ public class TestController {
     public void archive(){
         timeDataUtil.archiveJob();
     }
-
-    @GetMapping("clear")
-    public void clearLocal(){
-        timeDataUtil.clearJob();
-    }
 }
