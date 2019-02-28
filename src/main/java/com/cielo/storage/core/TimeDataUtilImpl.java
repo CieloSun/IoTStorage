@@ -1,10 +1,11 @@
 package com.cielo.storage.core;
 
 import com.alibaba.fastjson.JSON;
+import com.cielo.storage.api.CacheUtil;
 import com.cielo.storage.api.FDFSUtil;
-import com.cielo.storage.api.SSDBUtil;
+import com.cielo.storage.api.KVStoreUtil;
 import com.cielo.storage.api.TimeDataUtil;
-import com.cielo.storage.config.ArchiveConfig;
+import com.cielo.storage.config.TimeDataConfig;
 import com.cielo.storage.model.DataTag;
 import com.cielo.storage.tool.JSONUtil;
 import com.cielo.storage.tool.Try;
@@ -12,8 +13,8 @@ import org.nutz.ssdb4j.spi.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 
@@ -27,12 +28,11 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Autowired
     private FDFSUtil fdfsUtil;
     @Autowired
-    private SSDBUtil ssdbSync;
+    private KVStoreUtil ssdbSync;
     @Autowired
-    @Qualifier("ssdb-local")
-    private SSDBUtil ssdbLocal;
+    private CacheUtil cacheUtil;
     @Autowired
-    private ArchiveConfig archiveConfig;
+    private TimeDataConfig timeDataConfig;
 
     //获取ssdb-sync中最新归档时间
     private Long latestSyncArchiveTime(DataTag dataTag) {
@@ -43,28 +43,26 @@ class TimeDataUtilImpl implements TimeDataUtil {
 
     //获取ssdb-local中最新归档时间
     private Long latestLocalArchiveTime(DataTag dataTag) {
-        Response response = ssdbLocal.hGet(dataTag, LATEST_ARCHIVE);
-        if (response.notFound()) return 0L;
-        return response.asLong();
+        return cacheUtil.getVal(dataTag, LATEST_ARCHIVE, Long.class);
     }
 
     @Override
     public void set(DataTag dataTag, Object val) {
         val = JSON.toJSONString(val);
-        Map map = new HashMap();
+        Map<Object, Object> map = new HashMap<>();
         long timestamp = System.currentTimeMillis();
         map.put(timestamp, val);
         map.put(LATEST_VAL, val);
         map.put(LATEST_TIME, timestamp);
-        ssdbLocal.hMultiSet(dataTag, map);
+        cacheUtil.multiSet(dataTag, map);
     }
 
     //获取可能归档的hashMap中具体某条数据
     @Override
     public <T> T get(DataTag dataTag, Long timestamp, Class<T> clazz) throws Exception {
-        T t = ssdbLocal.hGet(dataTag, timestamp, clazz);
+        T t = cacheUtil.get(dataTag, timestamp, clazz);
         if (t != null) return t;
-        return fdfsUtil.downloadMap(ssdbSync.hLowerBoundVal(dataTag, timestamp), clazz).get(timestamp);
+        return (T) fdfsUtil.downloadMap(ssdbSync.hLowerBoundVal(dataTag, timestamp)).get(timestamp);
     }
 
     //获取可能归档的hashMap中某段数据,由于Lambda要求所在方法可重入，因而拆分
@@ -78,9 +76,9 @@ class TimeDataUtilImpl implements TimeDataUtil {
     private <T> Map<Object, T> getMap(DataTag dataTag, Long startTime, Long endTime, Class<T> clazz) {
         Map<Object, T> map = new HashMap<>();
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
-        if (endTime >= latestSyncArchiveTime) map.putAll(ssdbLocal.hScan(dataTag, startTime, endTime, clazz));
+        if (endTime >= latestSyncArchiveTime) map.putAll(cacheUtil.scan(dataTag, startTime, endTime, clazz));
         if (startTime < latestSyncArchiveTime)
-            ssdbSync.hScan(dataTag, startTime, ssdbSync.hLowerBoundKey(dataTag, endTime)).values().parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId, clazz))).forEach(map::putAll);
+            ssdbSync.hScan(dataTag, startTime, ssdbSync.hLowerBoundKey(dataTag, endTime)).values().parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId))).forEach(map::putAll);
         map.keySet().parallelStream().filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
         return map;
     }
@@ -88,28 +86,30 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Override
     public <T> T getLatest(DataTag dataTag, Class<T> clazz) throws Exception {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
-        long latestLocalTime = ssdbLocal.hGet(dataTag, LATEST_TIME).asLong();
-        if (latestLocalTime > latestSyncArchiveTime) return ssdbLocal.hGet(dataTag, LATEST_VAL, clazz);
+        long latestLocalTime = cacheUtil.getVal(dataTag, LATEST_TIME, Long.class);
+        if (latestLocalTime > latestSyncArchiveTime) return cacheUtil.get(dataTag, LATEST_VAL, clazz);
         else return get(dataTag, latestSyncArchiveTime, clazz);
     }
 
     @Override
     public void del(DataTag dataTag) {
-        ssdbLocal.hClear(dataTag);
-        fdfsUtil.multiDelete(ssdbSync.hGetAll(dataTag).mapString().values());
+        cacheUtil.clear(dataTag);
+        if (timeDataConfig.getDeleteValueTogether())
+            fdfsUtil.multiDelete(ssdbSync.hGetAll(dataTag).mapString().values());
         ssdbSync.hClear(dataTag);
     }
 
     @Override
     public void del(DataTag dataTag, Long startTime, Long endTime) {
-        ssdbLocal.hDel(dataTag, startTime, endTime);
-        fdfsUtil.multiDelete(ssdbSync.hScan(dataTag, startTime, endTime).values());
+        cacheUtil.delete(dataTag, startTime, endTime);
+        if (timeDataConfig.getDeleteValueTogether())
+            fdfsUtil.multiDelete(ssdbSync.hScan(dataTag, startTime, endTime).values());
         ssdbSync.hDel(dataTag, startTime, endTime);
     }
 
     private Set<DataTag> configTags() {
         Set<DataTag> tagSet = new HashSet<>();
-        archiveConfig.getArchiveTags().parallelStream().forEach(tagString -> ssdbLocal.hScanName(tagString).parallelStream().map(DataTag::new).forEach(tagSet::add));
+        timeDataConfig.getArchiveTags().parallelStream().forEach(tagString -> cacheUtil.searchCacheNames(tagString).parallelStream().map(DataTag::new).forEach(tagSet::add));
         return tagSet;
     }
 
@@ -117,26 +117,26 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Override
     public void archiveJob() {
         configTags().parallelStream().forEach(tag -> {
-            long archiveTime = System.currentTimeMillis();
-            Map<String, String> valueMap = ssdbLocal.hScan(tag, latestLocalArchiveTime(tag), archiveTime);
+            Long archiveTime = System.currentTimeMillis();
+            Map<String, String> valueMap = cacheUtil.scan(tag, latestLocalArchiveTime(tag), archiveTime);
             if (valueMap.size() != 0) {
-                try {
-                    ssdbLocal.hSet(tag, LATEST_ARCHIVE, archiveTime);
-                    String fileId = fdfsUtil.upload(JSONUtil.toMap(valueMap));
-                    Map syncMap = new HashMap();
+                String fileId;
+                String content = JSONUtil.toMapJSON(valueMap);
+                if (timeDataConfig.getSaveKeyInValue()) {
+                    Map<String, String> infos = new HashMap<>();
+                    infos.put("tag", tag.toString());
+                    infos.put("timestamp", archiveTime.toString());
+                    fileId = fdfsUtil.upload(content, infos);
+                } else fileId = fdfsUtil.upload(content);
+                if (StringUtils.hasText(fileId)) {
+                    cacheUtil.set(tag, LATEST_ARCHIVE, archiveTime);
+                    Map<Object, Object> syncMap = new HashMap<>();
                     syncMap.put(LATEST_ARCHIVE, archiveTime);
                     syncMap.put(archiveTime, fileId);
                     ssdbSync.hMultiSet(tag, syncMap);
                     logger.info(tag + ":" + fileId + " has archived on " + new Date(archiveTime));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                } else logger.info(tag + " cannot archive.");
             } else logger.info("Nothing needs to archive.");
         });
-    }
-
-    @Override
-    public void clearJob() {
-        configTags().parallelStream().filter(tag -> ssdbLocal.hSize(tag) > archiveConfig.getLeastClearNum()).forEach(tag -> ssdbLocal.hDel(tag, 0, latestLocalArchiveTime(tag)));
     }
 }

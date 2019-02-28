@@ -4,7 +4,7 @@ import com.cielo.demo.model.user.Permission;
 import com.cielo.demo.model.user.Role;
 import com.cielo.demo.model.user.User;
 import com.cielo.demo.service.core.UserService;
-import com.cielo.storage.api.SSDBUtil;
+import com.cielo.storage.api.KVStoreUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,22 +18,22 @@ import java.util.stream.Collectors;
 @RequestMapping("user")
 public class UserController {
     @Autowired
-    private SSDBUtil ssdbUtil;
+    private KVStoreUtil KVStoreUtil;
     @Autowired
     private UserService userService;
 
     @PostMapping
     public String setUp(String username, String password) throws Exception {
-        if (ssdbUtil.exists(User.key(username))) throw new AuthenticationException("Username has existed.");
+        if (KVStoreUtil.exists(User.key(username))) throw new AuthenticationException("Username has existed.");
         User user = new User(username, password, Role.GUEST);
-        ssdbUtil.set(User.key(username), user);
+        KVStoreUtil.set(User.key(username), user);
         return userService.generateToken(user);
     }
 
     @PostMapping("token")
     public String login(String username, String password) throws Exception {
-        if (ssdbUtil.exists(User.key(username))) {
-            User user = ssdbUtil.get(User.key(username), User.class);
+        if (KVStoreUtil.exists(User.key(username))) {
+            User user = KVStoreUtil.get(User.key(username), User.class);
             if (user.getPassword().equals(password)) return userService.generateToken(user);
             throw new AuthenticationException("Your password has error.");
         } else throw new AuthenticationException("Username does not exist.");
@@ -47,9 +47,9 @@ public class UserController {
     @PutMapping("{token}")
     public String updateUser(@PathVariable String token, String password) throws Exception {
         User user = getUser(token);
-        ssdbUtil.del(token);
+        KVStoreUtil.del(token);
         user.setPassword(password);
-        ssdbUtil.set(User.key(user.getUsername()), user);
+        KVStoreUtil.set(User.key(user.getUsername()), user);
         return userService.generateToken(user);
     }
 
@@ -66,34 +66,34 @@ public class UserController {
 
     @GetMapping("permission/{token}")
     public Set<Permission> showPermission(@PathVariable String token) throws Exception {
-        return getRole(token).getPermissions().parallelStream().map(permissionId -> ssdbUtil.get(Permission.key(permissionId), Permission.class)).collect(Collectors.toSet());
+        return getRole(token).getPermissions().parallelStream().map(permissionId -> KVStoreUtil.get(Permission.key(permissionId), Permission.class)).collect(Collectors.toSet());
     }
 
     @PostMapping("admin/{token}")
     public void editUser(@PathVariable String token, @RequestBody User user) throws Exception {
         userService.authPermission(token, Permission.EDIT_USER);
-        ssdbUtil.set(User.key(user.getUsername()), user);
+        KVStoreUtil.set(User.key(user.getUsername()), user);
     }
 
     @GetMapping("admin/permission/{token}")
     public List<Permission> showAllPermission(@PathVariable String token) throws Exception {
         userService.authPermission(token, Permission.GET_USER);
-        return ssdbUtil.scanValues("permission_", Permission.class);
+        return KVStoreUtil.scanValues("permission_", Permission.class);
     }
 
     @PostMapping("admin/role/{token}")
     public void addRole(@PathVariable String token, @RequestBody Set<Integer> permissions) throws Exception {
         userService.authPermission(token, Permission.EDIT_ROLE);
-        Role role = new Role(ssdbUtil.count("role_"), permissions);
-        ssdbUtil.set(Role.key(role.getRoleId()), role);
+        Role role = new Role(KVStoreUtil.count("role_"), permissions);
+        KVStoreUtil.set(Role.key(role.getRoleId()), role);
     }
 
     @PutMapping("admin/role/{roleId}/{token}")
     public void editRole(@PathVariable String token, @PathVariable Integer roleId, @RequestBody Set<Integer> permissions) throws Exception {
         userService.authPermission(token, Permission.EDIT_ROLE);
-        Role role = ssdbUtil.get(Role.key(roleId), Role.class);
+        Role role = KVStoreUtil.get(Role.key(roleId), Role.class);
         role.setPermissions(permissions);
-        ssdbUtil.set(Role.key(roleId), role);
+        KVStoreUtil.set(Role.key(roleId), role);
     }
 
 }

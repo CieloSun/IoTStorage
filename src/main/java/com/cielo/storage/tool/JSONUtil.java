@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
 
 public class JSONUtil {
     //将值为JSONString的List转变为一个JSONList
-    public static String toList(List<String> jsonObjects) {
+    public static String toListJSON(List<String> jsonObjects) {
         StringBuilder stringBuilder = new StringBuilder("[");
         IntStream.range(0, jsonObjects.size()).forEach(i -> {
             stringBuilder.append(jsonObjects.get(i));
@@ -19,18 +19,13 @@ public class JSONUtil {
     }
 
     //将值为JSONString的Map转变为一个JSONMap
-    public static String toMap(Map<String, String> jsonMap) {
+    public static String toMapJSON(Map<String, String> jsonMap) {
         StringBuilder stringBuilder = new StringBuilder("{");
         jsonMap.entrySet().parallelStream().map(entry -> "\"" + entry.getKey() + "\"" + ":" + entry.getValue() + ",").forEach(stringBuilder::append);
         return stringBuilder.replace(stringBuilder.length() - 1, stringBuilder.length(), "}").toString();
     }
 
-    public static <T> Map<Object, T> toMap(Map<String, String> jsonMap, Class<T> clazz) {
-        return JSON.parseObject(toMap(jsonMap), Map.class);
-    }
-
-    //将值为JSONListString的List合并为同一个列表的JSONList
-    public static String mergeList(List<String> jsonLists) {
-        return toList(jsonLists).replace("],[", ",").replace("[[", "[").replace("]]", "]");
+    public static Map toMap(Map<String, String> jsonMap) {
+        return JSON.parseObject(toMapJSON(jsonMap), Map.class);
     }
 }

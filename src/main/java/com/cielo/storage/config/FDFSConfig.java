@@ -19,7 +19,7 @@ public class FDFSConfig {
     private List<String> trackers;
     @Value("3000")
     private Long connectTimeout;
-    @Value("100")
+    @Value("1000")
     private Long readTimeout;
     @Value("32")
     private Integer maxThreads;

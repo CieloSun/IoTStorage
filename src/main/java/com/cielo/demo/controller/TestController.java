@@ -1,6 +1,7 @@
 package com.cielo.demo.controller;
 
 import com.cielo.storage.api.FDFSUtil;
+import com.cielo.storage.api.TimeDataUtil;
 import com.cielo.storage.fastdfs.FileInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -8,16 +9,29 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @CrossOrigin
 @RequestMapping("test")
 public class TestController {
     @Autowired
     private FDFSUtil fdfsUtil;
+    @Autowired
+    private TimeDataUtil timeDataUtil;
 
     @GetMapping("upload")
-    public String upload(String upString) throws Exception {
-        return fdfsUtil.upload(upString);
+    public String upload(String content) throws Exception {
+        return fdfsUtil.upload(content);
+    }
+
+    @GetMapping("upMeta")
+    public String uploadWithMeta(String content) throws Exception {
+        Map<String, String> map = new HashMap<>();
+        map.put("tag", "test");
+        map.put("timestamp", Long.toString(System.currentTimeMillis()));
+        return fdfsUtil.upload(content, map);
     }
 
     @GetMapping("download")
@@ -28,5 +42,15 @@ public class TestController {
     @GetMapping("info")
     public FileInfo getFileInfo(String path) throws Exception {
         return fdfsUtil.info(path);
+    }
+
+    @GetMapping("archive")
+    public void archive(){
+        timeDataUtil.archiveJob();
+    }
+
+    @GetMapping("clear")
+    public void clearLocal(){
+        timeDataUtil.clearJob();
     }
 }

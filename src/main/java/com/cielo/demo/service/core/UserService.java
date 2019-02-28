@@ -2,7 +2,7 @@ package com.cielo.demo.service.core;
 
 import com.cielo.demo.model.user.Role;
 import com.cielo.demo.model.user.User;
-import com.cielo.storage.api.SSDBUtil;
+import com.cielo.storage.api.KVStoreUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,30 +13,30 @@ import java.util.UUID;
 @Service
 public class UserService {
     @Autowired
-    private SSDBUtil ssdbUtil;
+    private KVStoreUtil KVStoreUtil;
 
     public String generateToken(User user) {
         String token = User.tokenKey(UUID.randomUUID().toString().replace("_", ""));
-        ssdbUtil.setx(token, user, 60 * 60 * 24);
+        KVStoreUtil.setx(token, user, 60 * 60 * 24);
         return token;
     }
 
     public User getUser(String token) throws AuthenticationException {
         authToken(token);
-        ssdbUtil.expire(token, 60 * 60 * 24);
-        return ssdbUtil.get(token, User.class);
+        KVStoreUtil.expire(token, 60 * 60 * 24);
+        return KVStoreUtil.get(token, User.class);
     }
 
     public void authToken(String token) throws AuthenticationException {
-        if (!ssdbUtil.exists(token)) throw new AuthenticationException("Your stringParam does not authToken.");
+        if (!KVStoreUtil.exists(token)) throw new AuthenticationException("Your stringParam does not authToken.");
     }
 
     public Role getRole(String token) throws AuthenticationException {
-        return ssdbUtil.get(Role.key(getUser(token).getRoleId()), Role.class);
+        return KVStoreUtil.get(Role.key(getUser(token).getRoleId()), Role.class);
     }
 
     public void deleteToken(String token) {
-        ssdbUtil.del(token);
+        KVStoreUtil.del(token);
     }
 
     public void authPermission(Role role, Integer permission) throws NoPermissionException {

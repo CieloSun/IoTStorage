@@ -2,44 +2,53 @@ package com.cielo.storage.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
-import com.cielo.storage.api.SSDBUtil;
-import com.cielo.storage.config.SSDBConfig;
+import com.cielo.storage.api.KVStoreUtil;
+import com.cielo.storage.config.KVStoreConfig;
 import com.cielo.storage.model.DataTag;
 import com.cielo.storage.tool.CollectionUtil;
 import com.cielo.storage.tool.JSONUtil;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.nutz.ssdb4j.SSDBs;
 import org.nutz.ssdb4j.spi.Response;
 import org.nutz.ssdb4j.spi.SSDB;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 
-abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
+@Service
+@Primary
+@Order(2)
+class KVStoreUtilImpl implements CommandLineRunner, KVStoreUtil {
     @Autowired
-    protected SSDBConfig ssdbConfig;
+    protected KVStoreConfig KVStoreConfig;
     protected SSDB ssdb;
 
     protected GenericObjectPoolConfig genericObjectPoolConfig() {
         //配置线程池
         GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
-        genericObjectPoolConfig.setMaxIdle(ssdbConfig.getMaxIdle());
-        genericObjectPoolConfig.setMinIdle(ssdbConfig.getMinIdle());
-        genericObjectPoolConfig.setMaxWaitMillis(ssdbConfig.getMaxWait());
-        genericObjectPoolConfig.setNumTestsPerEvictionRun(ssdbConfig.getNumTestsPerEvictionRun());
-        genericObjectPoolConfig.setSoftMinEvictableIdleTimeMillis(ssdbConfig.getSoftMinEvictableIdleTimeMillis());
-        genericObjectPoolConfig.setTimeBetweenEvictionRunsMillis(ssdbConfig.getTimeBetweenEvictionRunsMillis());
-        genericObjectPoolConfig.setTestOnBorrow(ssdbConfig.isTestOnBorrow());
-        genericObjectPoolConfig.setTestOnReturn(ssdbConfig.isTestOnReturn());
-        genericObjectPoolConfig.setTestWhileIdle(ssdbConfig.isTestWhileIdle());
-        genericObjectPoolConfig.setLifo(ssdbConfig.isLifo());
+        genericObjectPoolConfig.setMaxIdle(KVStoreConfig.getMaxIdle());
+        genericObjectPoolConfig.setMinIdle(KVStoreConfig.getMinIdle());
+        genericObjectPoolConfig.setMaxWaitMillis(KVStoreConfig.getMaxWait());
+        genericObjectPoolConfig.setNumTestsPerEvictionRun(KVStoreConfig.getNumTestsPerEvictionRun());
+        genericObjectPoolConfig.setSoftMinEvictableIdleTimeMillis(KVStoreConfig.getSoftMinEvictableIdleTimeMillis());
+        genericObjectPoolConfig.setTimeBetweenEvictionRunsMillis(KVStoreConfig.getTimeBetweenEvictionRunsMillis());
+        genericObjectPoolConfig.setTestOnBorrow(KVStoreConfig.isTestOnBorrow());
+        genericObjectPoolConfig.setTestOnReturn(KVStoreConfig.isTestOnReturn());
+        genericObjectPoolConfig.setTestWhileIdle(KVStoreConfig.isTestWhileIdle());
+        genericObjectPoolConfig.setLifo(KVStoreConfig.isLifo());
         return genericObjectPoolConfig;
     }
 
     @Override
-    public abstract void run(String... args);
+    public void run(String... args) {
+        ssdb = SSDBs.pool(KVStoreConfig.getHost(), KVStoreConfig.getPort(), KVStoreConfig.getTimeout(), genericObjectPoolConfig());
+    }
 
     //设置一个基本类型值
     @Override
@@ -76,7 +85,7 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     //基于首尾字符串获取原始MapString
     @Override
     public Map<String, String> scan(Object fromKey, Object endKey) {
-        return ssdb.scan(fromKey, endKey, ssdbConfig.getScanNumber()).mapString();
+        return ssdb.scan(fromKey, endKey, KVStoreConfig.getScanNumber()).mapString();
     }
 
     //基于前缀获取原始MapString
@@ -94,19 +103,19 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     //基于首尾字符串获取key
     @Override
     public List<String> scanKeys(Object fromKey, Object endKey) {
-        return ssdb.keys(fromKey, endKey, ssdbConfig.getScanNumber()).listString();
+        return ssdb.keys(fromKey, endKey, KVStoreConfig.getScanNumber()).listString();
     }
 
     //基于前缀获取值
     @Override
     public String scanValues(Object prefix) {
-        return JSONUtil.toList(CollectionUtil.toList(scan(prefix).values()));
+        return JSONUtil.toListJSON(CollectionUtil.toList(scan(prefix).values()));
     }
 
     //基于首尾字符串获取值
     @Override
     public String scanValues(Object fromKey, Object endKey) {
-        return JSONUtil.toList(CollectionUtil.toList(scan(fromKey, endKey).values()));
+        return JSONUtil.toListJSON(CollectionUtil.toList(scan(fromKey, endKey).values()));
     }
 
     //基于前缀获取值并反序列化
@@ -237,7 +246,7 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
 
     @Override
     public <T> List<T> hMultiGet(Class<T> clazz, DataTag tag, Object... keys) {
-        return JSON.parseArray(JSONUtil.toList(CollectionUtil.toList(ssdb.multi_hget(tag.toString(), keys).mapString().values())), clazz);
+        return JSON.parseArray(JSONUtil.toListJSON(CollectionUtil.toList(ssdb.multi_hget(tag.toString(), keys).mapString().values())), clazz);
     }
 
     @Override
@@ -247,7 +256,7 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
 
     @Override
     public <T> List<T> hGetAll(DataTag tag, Class<T> clazz) {
-        return JSON.parseArray(JSONUtil.toList(CollectionUtil.toList(hGetAll(tag).mapString().values())), clazz);
+        return JSON.parseArray(JSONUtil.toListJSON(CollectionUtil.toList(hGetAll(tag).mapString().values())), clazz);
     }
 
     @Override
@@ -267,7 +276,7 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
 
     @Override
     public List<String> hScanName(Object fromName, Object endName) {
-        return ssdb.hlist(fromName, endName, ssdbConfig.getScanNumber()).listString();
+        return ssdb.hlist(fromName, endName, KVStoreConfig.getScanNumber()).listString();
     }
 
     @Override
@@ -282,7 +291,7 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
 
     @Override
     public List<String> hScanKeys(DataTag tag, Object fromKey, Object endKey) {
-        return ssdb.hkeys(tag.toString(), fromKey, endKey, ssdbConfig.getScanNumber()).listString();
+        return ssdb.hkeys(tag.toString(), fromKey, endKey, KVStoreConfig.getScanNumber()).listString();
     }
 
     @Override
@@ -292,7 +301,7 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
 
     @Override
     public Map<String, String> hScan(DataTag tag, Object fromKey, Object endKey) {
-        return ssdb.hscan(tag.toString(), fromKey, endKey, ssdbConfig.getScanNumber()).mapString();
+        return ssdb.hscan(tag.toString(), fromKey, endKey, KVStoreConfig.getScanNumber()).mapString();
     }
 
     @Override
@@ -301,13 +310,23 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     }
 
     @Override
+    public <T> Map<Object, T> hScan(DataTag tag, Object fromKey, Object endKey, Class<T> clazz) {
+        return JSONUtil.toMap(hScan(tag, fromKey, endKey));
+    }
+
+    @Override
+    public <T> Map<Object, T> hScan(DataTag tag, Object prefix, Class<T> clazz) {
+        return JSONUtil.toMap(hScan(tag, prefix));
+    }
+
+    @Override
     public String hScanValues(DataTag tag, Object fromKey, Object endKey) {
-        return JSONUtil.toList(CollectionUtil.toList(hScan(tag, fromKey, endKey).values()));
+        return JSONUtil.toListJSON(CollectionUtil.toList(hScan(tag, fromKey, endKey).values()));
     }
 
     @Override
     public String hScanValues(DataTag tag, Object prefix) {
-        return JSONUtil.toList(CollectionUtil.toList(hScan(tag, prefix).values()));
+        return JSONUtil.toListJSON(CollectionUtil.toList(hScan(tag, prefix).values()));
     }
 
     @Override
@@ -318,16 +337,6 @@ abstract class SSDBUtilImpl implements CommandLineRunner, SSDBUtil {
     @Override
     public <T> List<T> hScanValues(DataTag tag, Object prefix, Class<T> clazz) {
         return JSON.parseArray(hScanValues(tag, prefix), clazz);
-    }
-
-    @Override
-    public <T> Map<Object, T> hScan(DataTag tag, Object fromKey, Object endKey, Class<T> clazz) {
-        return JSONUtil.toMap(hScan(tag, fromKey, endKey), clazz);
-    }
-
-    @Override
-    public <T> Map<Object, T> hScan(DataTag tag, Object prefix, Class<T> clazz) {
-        return JSONUtil.toMap(hScan(tag, prefix), clazz);
     }
 
     @Override

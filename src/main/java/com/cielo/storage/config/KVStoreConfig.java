@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 @ConfigurationProperties("ssdb")
-public class SSDBConfig {
+public class KVStoreConfig {
     @Value("localhost")
     private String host;
     @Value("localhost")

@@ -5,6 +5,7 @@ import com.cielo.storage.api.FDFSUtil;
 import com.cielo.storage.config.FDFSConfig;
 import com.cielo.storage.fastdfs.FastdfsClient;
 import com.cielo.storage.fastdfs.FileInfo;
+import com.cielo.storage.fastdfs.FileMetadata;
 import com.cielo.storage.fastdfs.TrackerServer;
 import com.github.luben.zstd.Zstd;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -74,16 +76,52 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
     }
 
     @Override
-    public String upload(String content) throws Exception {
+    public String upload(String content) {
         return upload(content.getBytes());
     }
 
     @Override
-    public String upload(byte[] fileContent) throws Exception {
-        if (fdfsConfig.isCompression()) fileContent = compress(fileContent);
-        if (fdfsConfig.isAssignGroup())
-            return fastdfsClient.upload(fdfsConfig.getGroup(), "tmp", fileContent).get().toString();
-        return fastdfsClient.upload("tmp", fileContent).get().toString();
+    public String upload(String content, String key) {
+        return upload(content.getBytes(), key);
+    }
+
+    @Override
+    public String upload(String content, Map<String, String> infos) {
+        return upload(content.getBytes(), infos);
+    }
+
+    @Override
+    public String upload(String content, String key, Map<String, String> infos) {
+        return upload(content.getBytes(), key, infos);
+    }
+
+    @Override
+    public String upload(byte[] fileContent) {
+        return upload(fileContent, null, null);
+    }
+
+    @Override
+    public String upload(byte[] fileContent, String key) {
+        return upload(fileContent, key, null);
+    }
+
+    @Override
+    public String upload(byte[] fileContent, Map<String, String> infos) {
+        return upload(fileContent, null, infos);
+    }
+
+    @Override
+    public String upload(byte[] fileContent, String key, Map<String, String> infos) {
+        try {
+            if (fdfsConfig.isCompression()) fileContent = compress(fileContent);
+            if (StringUtils.isEmpty(key)) key = "n";
+            return (fdfsConfig.isAssignGroup() ? infos == null ? fastdfsClient.upload(fdfsConfig.getGroup(), "." + key, fileContent)
+                    : fastdfsClient.upload(fdfsConfig.getGroup(), "." + key, fileContent, new FileMetadata(infos)) : infos == null ? fastdfsClient.upload("." + key, fileContent)
+                    : fastdfsClient.upload("." + key, fileContent, new FileMetadata(infos))).get().toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
@@ -109,7 +147,7 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
     }
 
     @Override
-    public <T> Map<Object, T> downloadMap(String path, Class<T> clazz) throws Exception {
+    public Map downloadMap(String path) throws Exception {
         return JSON.parseObject(downloadString(path), Map.class);
     }
 

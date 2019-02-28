@@ -2,7 +2,7 @@ package com.cielo.demo.service.core;
 
 import com.cielo.demo.model.device.Device;
 import com.cielo.demo.model.device.DeviceInfoModel;
-import com.cielo.storage.api.SSDBUtil;
+import com.cielo.storage.api.KVStoreUtil;
 import com.cielo.storage.api.TimeDataUtil;
 import com.cielo.storage.model.DataTag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ import java.util.Map;
 public class DeviceService {
     public static final DataTag DEVICE = new DataTag("configDevice");
     @Autowired
-    private SSDBUtil ssdbSync;
+    private KVStoreUtil ssdbSync;
     @Autowired
     private TimeDataUtil timeDataUtil;
 

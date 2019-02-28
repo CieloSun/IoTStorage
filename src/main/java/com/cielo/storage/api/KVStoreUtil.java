@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import java.util.List;
 import java.util.Map;
 
-public interface SSDBUtil {
+public interface KVStoreUtil {
     //设置一个基本类型值
     Response setVal(Object key, Object val);
 
@@ -126,6 +126,10 @@ public interface SSDBUtil {
 
     Map<String, String> hScan(DataTag tag, Object prefix);
 
+    <T> Map<Object, T> hScan(DataTag tag, Object fromKey, Object endKey, Class<T> clazz);
+
+    <T> Map<Object, T> hScan(DataTag tag, Object prefix, Class<T> clazz);
+
     String hScanValues(DataTag tag, Object fromKey, Object endKey);
 
     String hScanValues(DataTag tag, Object prefix);
@@ -133,10 +137,6 @@ public interface SSDBUtil {
     <T> List<T> hScanValues(DataTag tag, Object fromKey, Object endKey, Class<T> clazz);
 
     <T> List<T> hScanValues(DataTag tag, Object prefix, Class<T> clazz);
-
-    <T> Map<Object, T> hScan(DataTag tag, Object fromKey, Object endKey, Class<T> clazz);
-
-    <T> Map<Object, T> hScan(DataTag tag, Object prefix, Class<T> clazz);
 
     Response hLowerBoundKey(DataTag tag, Object key);
 

@@ -1,3 +1,4 @@
+
 server:
   port: 42000
   tomcat:
@@ -17,16 +18,26 @@ fdfs:
   compression-level: 3
   compression: true
   trackers: ["ws.cielosun.club:22122"]
+  read-timeout: 500
+  connect-timeout: 3000
 
 init:
   init-database: true
 device-config:
   archive-function-id-list: [2]
-archive:
+time-data:
   archive-tags: ["device_2"]
-  # 归档间隔默认为
-  archive-interval: 1800000
-  clear-interval: 86400000
+  # 归档间隔，单位秒
+  archive-interval: 1800
+  # 缓存清理时间，单位秒
+  clear-interval: 259200
   least-clear-num: 2
+  save-key-in-value: false
+  delete-value-together: true
 device-server:
   port: 42001
+spring:
+  cache:
+    type: ehcache
+    ehcache:
+      config: /ehcache.xml

@@ -20,6 +20,4 @@ public interface TimeDataUtil {
     void del(DataTag dataTag, Long startTime, Long endTime);
 
     void archiveJob();
-
-    void clearJob();
 }

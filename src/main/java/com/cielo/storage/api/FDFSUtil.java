@@ -7,15 +7,27 @@ import java.util.List;
 import java.util.Map;
 
 public interface FDFSUtil {
-    String upload(String content) throws Exception;
+    String upload(String content);
 
-    String upload(byte[] fileContent) throws Exception;
+    String upload(String content, String key);
+
+    String upload(String content, Map<String, String> infos);
+
+    String upload(String content, String key, Map<String, String> infos);
+
+    String upload(byte[] fileContent);
+
+    String upload(byte[] fileContent, String key);
+
+    String upload(byte[] fileContent, Map<String, String> infos);
+
+    String upload(byte[] fileContent, String key, Map<String, String> infos);
 
     <T> List<T> downloadList(String path, Class<T> clazz) throws Exception;
 
     <T> T downloadObject(String path, Class<T> clazz) throws Exception;
 
-    <T> Map<Object, T> downloadMap(String path, Class<T> clazz) throws Exception;
+    Map downloadMap(String path) throws Exception;
 
     String downloadString(String path) throws Exception;
 

@@ -8,7 +8,7 @@ import com.cielo.demo.model.user.Permission;
 import com.cielo.demo.model.user.Role;
 import com.cielo.demo.model.user.User;
 import com.cielo.demo.service.config.InitConfig;
-import com.cielo.storage.api.SSDBUtil;
+import com.cielo.storage.api.KVStoreUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,10 +30,10 @@ public class InitService implements CommandLineRunner {
     @Autowired
     private InitConfig initConfig;
     @Autowired
-    private SSDBUtil ssdbSync;
+    private KVStoreUtil ssdbSync;
     @Autowired
-    @Qualifier("ssdb-local")
-    private SSDBUtil ssdbLocal;
+    @Qualifier("kv-local")
+    private KVStoreUtil ssdbLocal;
     @Autowired
     private DeviceService deviceService;
 

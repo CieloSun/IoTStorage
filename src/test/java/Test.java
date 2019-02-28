@@ -23,7 +23,7 @@ public class Test {
 //        List<String> list = new ArrayList<>();
 //        list.add(JSON.toJSONString(new User("Cielo", "0928", 0)));
 //        list.add(JSON.toJSONString(new User("Boris", "0928", 0)));
-//        String s = JSONUtil.toList(list);
+//        String s = JSONUtil.toListJSON(list);
 //        List<User> users = JSON.parseArray(s, User.class);
 //        System.out.println(users.get(0));
 //        System.out.println(users.get(1));
