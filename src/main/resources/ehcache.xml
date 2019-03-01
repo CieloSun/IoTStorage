@@ -18,11 +18,11 @@
             memoryStoreEvictionPolicy="LRU"/>
 
     <!-- 此缓存最多可以存活timeToLiveSeconds秒，如果期间超过timeToIdleSeconds秒未访问，缓存失效 -->
-    <!--<cache-->
-    <!--name = "local"-->
-    <!--eternal = "true"-->
-    <!--maxElementsInMemory = "100000"-->
-    <!--overflowToDisk = "false"/>-->
+    <cache
+            name="local"
+            eternal="true"
+            maxElementsInMemory="100000"
+            overflowToDisk="false"/>
     <!-- maxElementsInMemory 内存中最大缓存对象数，看着自己的heap大小来搞 -->
     <!-- eternal：true表示对象永不过期，此时会忽略timeToIdleSeconds和timeToLiveSeconds属性，默认为false -->
     <!-- maxElementsOnDisk：硬盘中最大缓存对象数，若是0表示无穷大 -->

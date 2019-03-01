@@ -8,6 +8,7 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -20,13 +21,14 @@ import java.util.stream.Collectors;
 @Service
 class CacheUtilImpl implements CacheUtil {
     @Resource
-    private CacheManager cacheManager;
+    private EhCacheCacheManager ehCacheCacheManager;
     @Autowired
     private TimeDataConfig timeDataConfig;
 
     //利用不同的cache来实现类hashMap结构
     private Cache getCache(DataTag dataTag) {
         String cacheName = dataTag.toString();
+        CacheManager cacheManager = ehCacheCacheManager.getCacheManager();
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             cacheManager.addCacheIfAbsent(new Cache(cacheName, 0, false, true, Integer.MAX_VALUE, timeDataConfig.getClearInterval()));
@@ -58,7 +60,7 @@ class CacheUtilImpl implements CacheUtil {
 
     @Override
     public void clear(DataTag cacheName) {
-        cacheManager.removeCache(cacheName.toString());
+        ehCacheCacheManager.getCacheManager().removeCache(cacheName.toString());
     }
 
     @Override
@@ -87,11 +89,11 @@ class CacheUtilImpl implements CacheUtil {
 
     @Override
     public List<String> searchCacheNames(String prefix) {
-        return Arrays.asList(cacheManager.getCacheNames()).parallelStream().filter(tag -> tag.contains(prefix)).collect(Collectors.toList());
+        return Arrays.asList(ehCacheCacheManager.getCacheManager().getCacheNames()).parallelStream().filter(tag -> tag.contains(prefix)).collect(Collectors.toList());
     }
 
     @Override
-    public int size(DataTag cacheName) {
-        return getCache(cacheName).getSize();
+    public int size(DataTag dataTag) {
+        return getCache(dataTag).getSize();
     }
 }
