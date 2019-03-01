@@ -125,6 +125,7 @@ class PersistUtilImpl implements CommandLineRunner, PersistUtil {
 
     @Override
     public void delete(String path) {
+        if(path.contains(SHORT_CONTENT_LABEL)) return;
         fdfsUtil.delete(path);
     }
 
@@ -132,10 +133,5 @@ class PersistUtilImpl implements CommandLineRunner, PersistUtil {
     @Async
     public void multiDelete(Collection<String> paths) {
         paths.parallelStream().forEach(this::delete);
-    }
-
-    @Override
-    public FileInfo info(String path) throws Exception {
-        return fdfsUtil.info(path);
     }
 }

@@ -10,6 +10,4 @@ public interface FDFSUtil {
     byte[] download(String path) throws Exception;
 
     void delete(String path);
-
-    FileInfo info(String path) throws Exception;
 }

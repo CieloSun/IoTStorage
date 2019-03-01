@@ -31,6 +31,4 @@ public interface PersistUtil {
     void delete(String path);
 
     void multiDelete(Collection<String> paths);
-
-    FileInfo info(String path) throws Exception;
 }

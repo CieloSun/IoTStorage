@@ -39,11 +39,6 @@ public class TestController {
         return persistUtil.downloadString(path);
     }
 
-    @GetMapping("info")
-    public FileInfo getFileInfo(String path) throws Exception {
-        return persistUtil.info(path);
-    }
-
     @GetMapping("archive")
     public void archive() {
         timeDataUtil.archiveJob();

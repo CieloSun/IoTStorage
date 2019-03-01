@@ -3,7 +3,6 @@ package com.cielo.storage.core;
 import com.cielo.storage.api.FDFSUtil;
 import com.cielo.storage.config.FDFSConfig;
 import com.cielo.storage.fastdfs.FastdfsClient;
-import com.cielo.storage.fastdfs.FileInfo;
 import com.cielo.storage.fastdfs.FileMetadata;
 import com.cielo.storage.fastdfs.TrackerServer;
 import org.slf4j.Logger;
@@ -21,6 +20,7 @@ import java.util.stream.Collectors;
 @Service
 @Order(1)
 class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
+    private static final String FILE_SUFFIX = ".fdfs";
     Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired
     private FDFSConfig fdfsConfig;
@@ -47,7 +47,7 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
     @Override
     public String upload(byte[] fileContent, String key, Map<String, String> infos) {
         try {
-            if (StringUtils.isEmpty(key)) key = ".fdfs";
+            if (StringUtils.isEmpty(key)) key = FILE_SUFFIX;
             return (fdfsConfig.isAssignGroup() ? infos == null ? fastdfsClient.upload(fdfsConfig.getGroup(), key, fileContent)
                     : fastdfsClient.upload(fdfsConfig.getGroup(), key, fileContent, new FileMetadata(infos)) : infos == null ? fastdfsClient.upload(key, fileContent)
                     : fastdfsClient.upload(key, fileContent, new FileMetadata(infos))).get().toString();
@@ -65,10 +65,5 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
     @Override
     public void delete(String path) {
         fastdfsClient.delete(path);
-    }
-
-    @Override
-    public FileInfo info(String path) throws Exception {
-        return fastdfsClient.infoGet(path).get();
     }
 }
