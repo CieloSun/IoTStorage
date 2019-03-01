@@ -6,9 +6,7 @@ server:
 
 ssdb:
   host: ws.cielosun.club
-  port: 32768
-  host2: ws.cielosun.club
-  port2: 32772
+  port: 32771
   scan-number: 10000
 
 fdfs:

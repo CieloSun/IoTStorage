@@ -15,6 +15,7 @@ import javax.annotation.Resource;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -29,9 +30,9 @@ class CacheUtilImpl implements CacheUtil {
     private Cache getCache(DataTag dataTag) {
         String cacheName = dataTag.toString();
         CacheManager cacheManager = ehCacheCacheManager.getCacheManager();
-        Cache cache = cacheManager.getCache(cacheName);
+        Cache cache = cacheManager != null ? cacheManager.getCache(cacheName) : null;
         if (cache == null) {
-            cacheManager.addCacheIfAbsent(new Cache(cacheName, 0, false, true, Integer.MAX_VALUE, timeDataConfig.getClearInterval()));
+            Objects.requireNonNull(cacheManager).addCacheIfAbsent(new Cache(cacheName, 0, false, true, Integer.MAX_VALUE, timeDataConfig.getClearInterval()));
             cache = cacheManager.getCache(cacheName);
         }
         return cache;
@@ -39,6 +40,10 @@ class CacheUtilImpl implements CacheUtil {
 
     private boolean rangeFilter(Long key, Long startKey, Long endKey) {
         return key >= startKey && key <= endKey;
+    }
+
+    private List<Long> getLongKeys(Cache cache) {
+        return cache.getKeys().parallelStream().filter(key -> key instanceof Long).mapToLong(key -> (Long) key).boxed().collect(Collectors.toList());
     }
 
     @Override
@@ -54,18 +59,20 @@ class CacheUtilImpl implements CacheUtil {
     @Override
     public void delete(DataTag cacheName, Long startKey, Long endKey) {
         Cache cache = getCache(cacheName);
-        List<Long> keys = cache.getKeys();
+        List<Long> keys = getLongKeys(cache);
         cache.removeAll(keys.parallelStream().filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toList()));
     }
 
     @Override
     public void clear(DataTag cacheName) {
-        ehCacheCacheManager.getCacheManager().removeCache(cacheName.toString());
+        Objects.requireNonNull(ehCacheCacheManager.getCacheManager()).removeCache(cacheName.toString());
     }
 
     @Override
-    public <T> T getVal(DataTag cacheName, Object key, Class<T> clazz) {
-        return (T) getCache(cacheName).get(key);
+    public Object getVal(DataTag cacheName, Object key) {
+        Element element = getCache(cacheName).get(key);
+        if (element == null) return null;
+        return element.getObjectValue();
     }
 
     @Override
@@ -76,20 +83,20 @@ class CacheUtilImpl implements CacheUtil {
     @Override
     public <T> Map<Object, T> scan(DataTag cacheName, Long startKey, Long endKey, Class<T> clazz) {
         Cache cache = getCache(cacheName);
-        List<Long> keys = cache.getKeys();
+        List<Long> keys = getLongKeys(cache);
         return keys.parallelStream().filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toMap(Function.identity(), key -> JSON.parseObject(cache.get(key).getObjectValue().toString(), clazz), (a, b) -> b));
     }
 
     @Override
     public Map scan(DataTag cacheName, Long startKey, Long endKey) {
         Cache cache = getCache(cacheName);
-        List<Long> keys = cache.getKeys();
+        List<Long> keys = getLongKeys(cache);
         return keys.parallelStream().filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toMap(Function.identity(), key -> cache.get(key).getObjectValue(), (a, b) -> b));
     }
 
     @Override
     public List<String> searchCacheNames(String prefix) {
-        return Arrays.asList(ehCacheCacheManager.getCacheManager().getCacheNames()).parallelStream().filter(tag -> tag.contains(prefix)).collect(Collectors.toList());
+        return Arrays.asList(Objects.requireNonNull(ehCacheCacheManager.getCacheManager()).getCacheNames()).parallelStream().filter(tag -> tag.contains(prefix)).collect(Collectors.toList());
     }
 
     @Override

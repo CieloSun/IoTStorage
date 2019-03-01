@@ -13,7 +13,7 @@ public interface CacheUtil {
 
     <T> T get(DataTag cacheName, Object key, Class<T> clazz);
 
-    <T> T getVal(DataTag cacheName, Object key, Class<T> clazz);
+    Object getVal(DataTag cacheName, Object key);
 
     Map scan(DataTag cacheName, Long startKey, Long endKey);
 

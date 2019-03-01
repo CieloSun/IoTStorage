@@ -21,7 +21,7 @@ import java.util.*;
 //用于管理较小value，采用小数据合并的方式归档SSDB中数据
 @Service
 class TimeDataUtilImpl implements TimeDataUtil {
-    private static final DataTag LATEST_ARCHIVE = new DataTag("latest_file");
+    private static final String LATEST_ARCHIVE = "latest_file";
     private static final String LATEST_VAL = "latest_val";
     private static final String LATEST_TIME = "latest_time";
     Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -34,16 +34,22 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Autowired
     private TimeDataConfig timeDataConfig;
 
-    //获取ssdb-sync中最新归档时间
     private Long latestSyncArchiveTime(DataTag dataTag) {
         Response response = kvStoreUtil.hGet(dataTag, LATEST_ARCHIVE);
         if (response.notFound()) return 0L;
         return response.asLong();
     }
 
-    //获取ssdb-local中最新归档时间
     private Long latestLocalArchiveTime(DataTag dataTag) {
-        return cacheUtil.getVal(dataTag, LATEST_ARCHIVE, Long.class);
+        Object val = cacheUtil.getVal(dataTag, LATEST_ARCHIVE);
+        if (val instanceof Long) return (Long) val;
+        return 0l;
+    }
+
+    private Long latestLocalSaveTime(DataTag dataTag) {
+        Object val = cacheUtil.getVal(dataTag, LATEST_TIME);
+        if (val instanceof Long) return (Long) val;
+        return 0l;
     }
 
     @Override
@@ -86,7 +92,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Override
     public <T> T getLatest(DataTag dataTag, Class<T> clazz) throws Exception {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
-        long latestLocalTime = cacheUtil.getVal(dataTag, LATEST_TIME, Long.class);
+        long latestLocalTime = latestLocalSaveTime(dataTag);
         if (latestLocalTime > latestSyncArchiveTime) return cacheUtil.get(dataTag, LATEST_VAL, clazz);
         else return get(dataTag, latestSyncArchiveTime, clazz);
     }
