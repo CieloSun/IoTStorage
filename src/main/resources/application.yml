@@ -7,7 +7,7 @@ ssdb:
   host: ws.cielosun.club
   port: 32771
   scan-number: 10000
-  max-size-of-single-value: 64
+  max-size-of-single-value: 256
 
 fdfs:
   assign-group: false
