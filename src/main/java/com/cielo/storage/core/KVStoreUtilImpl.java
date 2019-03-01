@@ -26,8 +26,8 @@ import java.util.Map;
 @Order(2)
 class KVStoreUtilImpl implements CommandLineRunner, KVStoreUtil {
     @Autowired
-    protected KVStoreConfig KVStoreConfig;
-    protected SSDB ssdb;
+    private KVStoreConfig KVStoreConfig;
+    private SSDB ssdb;
 
     protected GenericObjectPoolConfig genericObjectPoolConfig() {
         //配置线程池

@@ -20,6 +20,13 @@ public class FileInfo {
         this.address = builder.address;
     }
 
+    /**
+     * @return
+     */
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+
     public long fileSize() {
         return fileSize;
     }
@@ -44,13 +51,6 @@ public class FileInfo {
                 ", crc32=" + crc32 +
                 ", address='" + address + '\'' +
                 '}';
-    }
-
-    /**
-     * @return
-     */
-    public static Builder newBuilder() {
-        return new Builder();
     }
 
     public static class Builder {

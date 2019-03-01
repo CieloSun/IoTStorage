@@ -1,4 +1,3 @@
-
 server:
   port: 42000
   tomcat:
@@ -8,17 +7,18 @@ ssdb:
   host: ws.cielosun.club
   port: 32771
   scan-number: 10000
+  max-size-of-single-value: 64
 
 fdfs:
   assign-group: false
   group: group2
-  dictionary-file: device.dic
-  compression-level: 3
-  compression: true
   trackers: ["ws.cielosun.club:22122"]
   read-timeout: 500
   connect-timeout: 3000
-
+compression:
+  dictionary-file: device.dic
+  compression-level: 3
+  compression: true
 init:
   init-database: true
 device-config:

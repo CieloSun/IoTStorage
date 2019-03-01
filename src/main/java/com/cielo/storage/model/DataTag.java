@@ -2,9 +2,6 @@ package com.cielo.storage.model;
 
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Data
 public class DataTag {
     private String tag;

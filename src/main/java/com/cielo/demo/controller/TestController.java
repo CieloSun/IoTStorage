@@ -1,6 +1,6 @@
 package com.cielo.demo.controller;
 
-import com.cielo.storage.api.FDFSUtil;
+import com.cielo.storage.api.PersistUtil;
 import com.cielo.storage.api.TimeDataUtil;
 import com.cielo.storage.fastdfs.FileInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,13 +17,13 @@ import java.util.Map;
 @RequestMapping("test")
 public class TestController {
     @Autowired
-    private FDFSUtil fdfsUtil;
+    private PersistUtil persistUtil;
     @Autowired
     private TimeDataUtil timeDataUtil;
 
     @GetMapping("upload")
     public String upload(String content) throws Exception {
-        return fdfsUtil.upload(content);
+        return persistUtil.upload(content);
     }
 
     @GetMapping("upMeta")
@@ -31,21 +31,21 @@ public class TestController {
         Map<String, String> map = new HashMap<>();
         map.put("tag", "test");
         map.put("timestamp", Long.toString(System.currentTimeMillis()));
-        return fdfsUtil.upload(content, map);
+        return persistUtil.upload(content, map);
     }
 
     @GetMapping("download")
     public String download(String path) throws Exception {
-        return fdfsUtil.downloadString(path);
+        return persistUtil.downloadString(path);
     }
 
     @GetMapping("info")
     public FileInfo getFileInfo(String path) throws Exception {
-        return fdfsUtil.info(path);
+        return persistUtil.info(path);
     }
 
     @GetMapping("archive")
-    public void archive(){
+    public void archive() {
         timeDataUtil.archiveJob();
     }
 }

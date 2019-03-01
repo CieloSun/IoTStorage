@@ -1,6 +1,5 @@
 package com.cielo.storage.config;
 
-import com.cielo.storage.fastdfs.TrackerServer;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -23,10 +22,4 @@ public class FDFSConfig {
     private Long readTimeout;
     @Value("32")
     private Integer maxThreads;
-    @Value("true")
-    private boolean compression;
-    @Value("3")
-    private int compressionLevel;
-    @Value("device.dic")
-    private String dictionaryFile;
 }

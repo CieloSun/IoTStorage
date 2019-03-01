@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.stream.IntStream;
 
 @Service
-@Order(3)
+@Order(4)
 public class InitService implements CommandLineRunner {
     Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired

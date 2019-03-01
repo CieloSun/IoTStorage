@@ -10,9 +10,9 @@ import io.netty.buffer.ByteBufAllocator;
 import java.util.Collections;
 import java.util.List;
 
-import static com.cielo.storage.fastdfs.FastdfsConstants.*;
 import static com.cielo.storage.fastdfs.FastdfsConstants.Commands.SERVICE_QUERY_STORE_WITHOUT_GROUP_ONE;
 import static com.cielo.storage.fastdfs.FastdfsConstants.Commands.SERVICE_QUERY_STORE_WITH_GROUP_ONE;
+import static com.cielo.storage.fastdfs.FastdfsConstants.*;
 import static com.cielo.storage.fastdfs.FastdfsUtils.isEmpty;
 import static com.cielo.storage.fastdfs.FastdfsUtils.writeFixLength;
 

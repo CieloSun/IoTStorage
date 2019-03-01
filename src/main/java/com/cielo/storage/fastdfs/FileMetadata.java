@@ -36,6 +36,13 @@ public class FileMetadata {
     /**
      * @return
      */
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+
+    /**
+     * @return
+     */
     public Map<String, String> values() {
         return Collections.unmodifiableMap(values);
     }
@@ -69,13 +76,6 @@ public class FileMetadata {
             first = false;
         }
         return sb.toString().getBytes(charset);
-    }
-
-    /**
-     * @return
-     */
-    public static Builder newBuilder() {
-        return new Builder();
     }
 
     public static class Builder {

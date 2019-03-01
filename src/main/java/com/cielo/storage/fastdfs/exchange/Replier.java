@@ -21,6 +21,27 @@ public interface Replier<T> {
     void reply(ByteBuf in, CompletableFuture<T> promise);
 
     /**
+     * 空响应解码器
+     *
+     * @author liulongbiao
+     */
+    enum NOPDecoder implements Decoder<Void> {
+
+        INSTANCE;
+
+        @Override
+        public long expectLength() {
+            return 0;
+        }
+
+        @Override
+        public Void decode(ByteBuf buf) {
+            return null;
+        }
+
+    }
+
+    /**
      * 响应解码器
      *
      * @author liulongbiao
@@ -43,26 +64,5 @@ public interface Replier<T> {
          * @return
          */
         T decode(ByteBuf buf);
-    }
-
-    /**
-     * 空响应解码器
-     *
-     * @author liulongbiao
-     */
-    enum NOPDecoder implements Decoder<Void> {
-
-        INSTANCE;
-
-        @Override
-        public long expectLength() {
-            return 0;
-        }
-
-        @Override
-        public Void decode(ByteBuf buf) {
-            return null;
-        }
-
     }
 }

@@ -37,4 +37,6 @@ public class KVStoreConfig {
     private boolean lifo;
     @Value("1000")
     private int scanNumber;
+    @Value("64")
+    private Integer maxSizeOfSingleValue;
 }

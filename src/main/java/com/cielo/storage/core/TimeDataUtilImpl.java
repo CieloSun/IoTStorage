@@ -2,8 +2,8 @@ package com.cielo.storage.core;
 
 import com.alibaba.fastjson.JSON;
 import com.cielo.storage.api.CacheUtil;
-import com.cielo.storage.api.FDFSUtil;
 import com.cielo.storage.api.KVStoreUtil;
+import com.cielo.storage.api.PersistUtil;
 import com.cielo.storage.api.TimeDataUtil;
 import com.cielo.storage.config.TimeDataConfig;
 import com.cielo.storage.model.DataTag;
@@ -26,7 +26,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     private static final String LATEST_TIME = "latest_time";
     Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired
-    private FDFSUtil fdfsUtil;
+    private PersistUtil persistUtil;
     @Autowired
     private KVStoreUtil kvStoreUtil;
     @Autowired
@@ -68,7 +68,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public <T> T get(DataTag dataTag, Long timestamp, Class<T> clazz) throws Exception {
         T t = cacheUtil.get(dataTag, timestamp, clazz);
         if (t != null) return t;
-        return (T) fdfsUtil.downloadMap(kvStoreUtil.hLowerBoundVal(dataTag, timestamp)).get(timestamp);
+        return (T) persistUtil.downloadMap(kvStoreUtil.hLowerBoundVal(dataTag, timestamp)).get(timestamp);
     }
 
     //获取可能归档的hashMap中某段数据,由于Lambda要求所在方法可重入，因而拆分
@@ -84,7 +84,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
         if (endTime >= latestSyncArchiveTime) map.putAll(cacheUtil.scan(dataTag, startTime, endTime, clazz));
         if (startTime < latestSyncArchiveTime)
-            kvStoreUtil.hScan(dataTag, startTime, kvStoreUtil.hLowerBoundKey(dataTag, endTime)).values().parallelStream().map(Try.of(fileId -> fdfsUtil.downloadMap(fileId))).forEach(map::putAll);
+            kvStoreUtil.hScan(dataTag, startTime, kvStoreUtil.hLowerBoundKey(dataTag, endTime)).values().parallelStream().map(Try.of(fileId -> persistUtil.downloadMap(fileId))).forEach(map::putAll);
         map.keySet().parallelStream().filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
         return map;
     }
@@ -101,7 +101,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public void del(DataTag dataTag) {
         cacheUtil.clear(dataTag);
         if (timeDataConfig.getDeleteValueTogether())
-            fdfsUtil.multiDelete(kvStoreUtil.hGetAll(dataTag).mapString().values());
+            persistUtil.multiDelete(kvStoreUtil.hGetAll(dataTag).mapString().values());
         kvStoreUtil.hClear(dataTag);
     }
 
@@ -109,7 +109,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public void del(DataTag dataTag, Long startTime, Long endTime) {
         cacheUtil.delete(dataTag, startTime, endTime);
         if (timeDataConfig.getDeleteValueTogether())
-            fdfsUtil.multiDelete(kvStoreUtil.hScan(dataTag, startTime, endTime).values());
+            persistUtil.multiDelete(kvStoreUtil.hScan(dataTag, startTime, endTime).values());
         kvStoreUtil.hDel(dataTag, startTime, endTime);
     }
 
@@ -132,8 +132,8 @@ class TimeDataUtilImpl implements TimeDataUtil {
                     Map<String, String> infos = new HashMap<>();
                     infos.put("tag", tag.toString());
                     infos.put("timestamp", archiveTime.toString());
-                    fileId = fdfsUtil.upload(content, infos);
-                } else fileId = fdfsUtil.upload(content);
+                    fileId = persistUtil.upload(content, infos);
+                } else fileId = persistUtil.upload(content);
                 if (StringUtils.hasText(fileId)) {
                     cacheUtil.set(tag, LATEST_ARCHIVE, archiveTime);
                     Map<Object, Object> syncMap = new HashMap<>();

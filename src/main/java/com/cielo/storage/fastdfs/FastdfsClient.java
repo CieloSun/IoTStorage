@@ -45,13 +45,19 @@ public final class FastdfsClient implements Closeable {
     }
 
     /**
+     * @return
+     */
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+
+    /**
      * @param file
      * @return
      */
     public CompletableFuture<FileId> upload(File file) {
         return upload(null, file);
     }
-
 
     /**
      * @param group
@@ -104,7 +110,6 @@ public final class FastdfsClient implements Closeable {
     public CompletableFuture<FileId> upload(String group, String filename, byte[] content, FileMetadata metadata) {
         return upload(group, content, filename, content.length, metadata);
     }
-
 
     /**
      * @param file
@@ -275,7 +280,6 @@ public final class FastdfsClient implements Closeable {
         return uploadAppender(null, content, filename, size);
     }
 
-
     /**
      * @param content
      * @param filename
@@ -340,7 +344,6 @@ public final class FastdfsClient implements Closeable {
     public CompletableFuture<Void> download(String fileId, Object out) {
         return download(FileId.fromString(fileId), out);
     }
-
 
     /**
      * @param fileId
@@ -706,13 +709,6 @@ public final class FastdfsClient implements Closeable {
     @Override
     public void close() throws IOException {
         executor.close();
-    }
-
-    /**
-     * @return
-     */
-    public static Builder newBuilder() {
-        return new Builder();
     }
 
     public static class Builder {

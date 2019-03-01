@@ -29,6 +29,35 @@ public class FileId {
     }
 
     /**
+     * 从全路径构造存储路径
+     *
+     * @param fullPath
+     * @return
+     */
+    public static FileId fromString(String fullPath) {
+        if (fullPath == null || fullPath.length() == 0) {
+            throw new IllegalArgumentException("fullPath should not be empty.");
+        }
+        int idx = fullPath.indexOf(SEPARATER);
+        if (idx < 0) {
+            throw new IllegalArgumentException("fullPath cannot find path separater.");
+        }
+
+        String group = fullPath.substring(0, idx);
+        String path = fullPath.substring(idx + 1);
+        return new FileId(group, path);
+    }
+
+    /**
+     * @param base64
+     * @return
+     */
+    public static FileId fromBase64String(String base64) {
+        byte[] bytes = Base64.getUrlDecoder().decode(base64.getBytes(UTF_8));
+        return fromString(new String(bytes));
+    }
+
+    /**
      * @return
      */
     public String group() {
@@ -76,34 +105,5 @@ public class FileId {
      */
     public String toBase64String() {
         return Base64.getUrlEncoder().encodeToString(toBytes());
-    }
-
-    /**
-     * 从全路径构造存储路径
-     *
-     * @param fullPath
-     * @return
-     */
-    public static FileId fromString(String fullPath) {
-        if (fullPath == null || fullPath.length() == 0) {
-            throw new IllegalArgumentException("fullPath should not be empty.");
-        }
-        int idx = fullPath.indexOf(SEPARATER);
-        if (idx < 0) {
-            throw new IllegalArgumentException("fullPath cannot find path separater.");
-        }
-
-        String group = fullPath.substring(0, idx);
-        String path = fullPath.substring(idx + 1);
-        return new FileId(group, path);
-    }
-
-    /**
-     * @param base64
-     * @return
-     */
-    public static FileId fromBase64String(String base64) {
-        byte[] bytes = Base64.getUrlDecoder().decode(base64.getBytes(UTF_8));
-        return fromString(new String(bytes));
     }
 }

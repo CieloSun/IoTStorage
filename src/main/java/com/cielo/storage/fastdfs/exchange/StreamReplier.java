@@ -19,6 +19,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public class StreamReplier extends ReplierSupport<Void> {
 
+    private final Sink sink;
+    private long readed = 0;
+
+    private StreamReplier(Sink sink) {
+        this.sink = sink;
+    }
+
     /**
      * @param out
      * @return
@@ -36,13 +43,6 @@ public class StreamReplier extends ReplierSupport<Void> {
             return new NioSink((GatheringByteChannel) out);
         }
         throw new FastdfsException("unknown sink output type " + out.getClass().getName());
-    }
-
-    private final Sink sink;
-    private long readed = 0;
-
-    private StreamReplier(Sink sink) {
-        this.sink = sink;
     }
 
     @Override
