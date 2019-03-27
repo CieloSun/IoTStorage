@@ -2,6 +2,7 @@ package com.cielo.demo.netty.core;
 
 import com.cielo.demo.netty.config.DeviceServerConfig;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -12,6 +13,7 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -29,6 +31,8 @@ public class DeviceServer implements CommandLineRunner {
     private EventLoopGroup bossGroup = new NioEventLoopGroup();
     private EventLoopGroup workerGroup = new NioEventLoopGroup();
     private ServerBootstrap bootstrap = new ServerBootstrap();
+    @Autowired
+    private ObjectFactory<DeviceServerHandler> deviceServerHandlerObjectFactory;
 
     @Override
     @Async
@@ -37,11 +41,13 @@ public class DeviceServer implements CommandLineRunner {
             bootstrap.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class).option(ChannelOption.SO_KEEPALIVE, true).childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel socketChannel) {
+                    socketChannel.config().setAllocator(PooledByteBufAllocator.DEFAULT);
                     ChannelPipeline pipeline = socketChannel.pipeline();
                     pipeline.addLast(new ReadTimeoutHandler(deviceServerConfig.getReadTimeout()));
                     pipeline.addLast(new JsonObjectDecoder());
                     pipeline.addLast(new StringDecoder());
                     pipeline.addLast(new StringEncoder());
+                    pipeline.addLast(deviceServerHandlerObjectFactory.getObject());
                 }
             }).childOption(ChannelOption.SO_KEEPALIVE, true);
             logger.info("Device server setup at port " + deviceServerConfig.getPort());

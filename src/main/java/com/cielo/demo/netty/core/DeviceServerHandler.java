@@ -3,6 +3,7 @@ package com.cielo.demo.netty.core;
 import com.alibaba.fastjson.JSON;
 import com.cielo.demo.model.device.DeviceInfoModel;
 import com.cielo.demo.service.core.DeviceService;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
