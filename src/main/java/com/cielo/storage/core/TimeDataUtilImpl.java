@@ -84,7 +84,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
         if (endTime >= latestSyncArchiveTime) map.putAll(cacheUtil.scan(dataTag, startTime, endTime, clazz));
         if (startTime < latestSyncArchiveTime)
-            kvStoreUtil.hScan(dataTag, startTime, kvStoreUtil.hLowerBoundKey(dataTag, endTime)).values().parallelStream().map(Try.of(fileId -> persistUtil.downloadMap(fileId))).forEach(map::putAll);
+            kvStoreUtil.hScan(dataTag, startTime, kvStoreUtil.hLowerBoundKey(dataTag, endTime).asLong()).values().parallelStream().map(Try.of(fileId -> persistUtil.downloadMap(fileId))).forEach(map::putAll);
         map.keySet().parallelStream().filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
         return map;
     }
