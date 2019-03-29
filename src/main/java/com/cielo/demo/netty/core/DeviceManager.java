@@ -1,6 +1,7 @@
 package com.cielo.demo.netty.core;
 
 import com.alibaba.fastjson.JSON;
+import com.cielo.storage.tool.StreamProxy;
 import io.netty.channel.Channel;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +33,7 @@ public class DeviceManager {
     }
 
     public void delete(Channel channel) {
-        channels.keySet().parallelStream().filter(id -> channels.get(id) == channel).forEach(id -> channels.remove(id));
+        StreamProxy.stream(channels.keySet()).filter(id -> channels.get(id) == channel).forEach(id -> channels.remove(id));
     }
 
     public boolean sendVal(String id, Object message) {

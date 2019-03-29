@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.cielo.storage.api.CacheUtil;
 import com.cielo.storage.config.TimeDataConfig;
 import com.cielo.storage.model.DataTag;
+import com.cielo.storage.tool.StreamProxy;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -43,7 +44,7 @@ class CacheUtilImpl implements CacheUtil {
     }
 
     private List<Long> getLongKeys(Cache cache) {
-        return cache.getKeys().parallelStream().filter(key -> key instanceof Long).mapToLong(key -> (Long) key).boxed().collect(Collectors.toList());
+        return StreamProxy.stream(cache.getKeys()).filter(key -> key instanceof Long).mapToLong(key -> (Long) key).boxed().collect(Collectors.toList());
     }
 
     @Override
@@ -53,14 +54,14 @@ class CacheUtilImpl implements CacheUtil {
 
     @Override
     public void multiSet(DataTag cacheName, Map<Object, Object> map) {
-        getCache(cacheName).putAll(map.entrySet().parallelStream().map(entry -> new Element(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
+        getCache(cacheName).putAll(StreamProxy.stream(map.entrySet()).map(entry -> new Element(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
     }
 
     @Override
     public void delete(DataTag cacheName, Long startKey, Long endKey) {
         Cache cache = getCache(cacheName);
         List<Long> keys = getLongKeys(cache);
-        cache.removeAll(keys.parallelStream().filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toList()));
+        cache.removeAll(StreamProxy.stream(keys).filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toList()));
     }
 
     @Override
@@ -84,19 +85,19 @@ class CacheUtilImpl implements CacheUtil {
     public <T> Map<Object, T> scan(DataTag cacheName, Long startKey, Long endKey, Class<T> clazz) {
         Cache cache = getCache(cacheName);
         List<Long> keys = getLongKeys(cache);
-        return keys.parallelStream().filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toMap(Function.identity(), key -> JSON.parseObject(cache.get(key).getObjectValue().toString(), clazz), (a, b) -> b));
+        return StreamProxy.stream(keys).filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toMap(Function.identity(), key -> JSON.parseObject(cache.get(key).getObjectValue().toString(), clazz), (a, b) -> b));
     }
 
     @Override
     public Map scan(DataTag cacheName, Long startKey, Long endKey) {
         Cache cache = getCache(cacheName);
         List<Long> keys = getLongKeys(cache);
-        return keys.parallelStream().filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toMap(Function.identity(), key -> cache.get(key).getObjectValue(), (a, b) -> b));
+        return StreamProxy.stream(keys).filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toMap(Function.identity(), key -> cache.get(key).getObjectValue(), (a, b) -> b));
     }
 
     @Override
     public List<String> searchCacheNames(String prefix) {
-        return Arrays.asList(Objects.requireNonNull(ehCacheCacheManager.getCacheManager()).getCacheNames()).parallelStream().filter(tag -> tag.contains(prefix)).collect(Collectors.toList());
+        return StreamProxy.stream(Arrays.asList(Objects.requireNonNull(ehCacheCacheManager.getCacheManager()).getCacheNames())).filter(tag -> tag.contains(prefix)).collect(Collectors.toList());
     }
 
     @Override

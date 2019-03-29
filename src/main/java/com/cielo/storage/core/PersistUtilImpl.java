@@ -5,7 +5,7 @@ import com.cielo.storage.api.FDFSUtil;
 import com.cielo.storage.api.PersistUtil;
 import com.cielo.storage.config.CompressionConfig;
 import com.cielo.storage.config.KVStoreConfig;
-import com.cielo.storage.fastdfs.FileInfo;
+import com.cielo.storage.tool.StreamProxy;
 import com.github.luben.zstd.Zstd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,13 +125,13 @@ class PersistUtilImpl implements CommandLineRunner, PersistUtil {
 
     @Override
     public void delete(String path) {
-        if(path.contains(SHORT_CONTENT_LABEL)) return;
+        if (path.contains(SHORT_CONTENT_LABEL)) return;
         fdfsUtil.delete(path);
     }
 
     @Override
     @Async
     public void multiDelete(Collection<String> paths) {
-        paths.parallelStream().forEach(this::delete);
+        StreamProxy.stream(paths).forEach(this::delete);
     }
 }

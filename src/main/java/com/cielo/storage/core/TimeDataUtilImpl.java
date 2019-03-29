@@ -8,6 +8,7 @@ import com.cielo.storage.api.TimeDataUtil;
 import com.cielo.storage.config.TimeDataConfig;
 import com.cielo.storage.model.DataTag;
 import com.cielo.storage.tool.JSONUtil;
+import com.cielo.storage.tool.StreamProxy;
 import com.cielo.storage.tool.Try;
 import org.nutz.ssdb4j.spi.Response;
 import org.slf4j.Logger;
@@ -84,8 +85,8 @@ class TimeDataUtilImpl implements TimeDataUtil {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
         if (endTime >= latestSyncArchiveTime) map.putAll(cacheUtil.scan(dataTag, startTime, endTime, clazz));
         if (startTime < latestSyncArchiveTime)
-            kvStoreUtil.hScan(dataTag, startTime, kvStoreUtil.hLowerBoundKey(dataTag, endTime).asLong()).values().parallelStream().map(Try.of(fileId -> persistUtil.downloadMap(fileId))).forEach(map::putAll);
-        map.keySet().parallelStream().filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
+            StreamProxy.stream(kvStoreUtil.hScan(dataTag, startTime, kvStoreUtil.hLowerBoundKey(dataTag, endTime).asLong()).values()).map(Try.of(fileId -> persistUtil.downloadMap(fileId))).forEach(map::putAll);
+        StreamProxy.stream(map.keySet()).filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
         return map;
     }
 
@@ -115,14 +116,14 @@ class TimeDataUtilImpl implements TimeDataUtil {
 
     private Set<DataTag> configTags() {
         Set<DataTag> tagSet = new HashSet<>();
-        timeDataConfig.getArchiveTags().parallelStream().forEach(tagString -> cacheUtil.searchCacheNames(tagString).parallelStream().map(DataTag::new).forEach(tagSet::add));
+        StreamProxy.stream(timeDataConfig.getArchiveTags()).forEach(tagString -> StreamProxy.stream(cacheUtil.searchCacheNames(tagString)).map(DataTag::new).forEach(tagSet::add));
         return tagSet;
     }
 
     //hashMap中数据归档,hashMap中key为时间戳，val为JSON对象
     @Override
     public void archiveJob() {
-        configTags().parallelStream().forEach(tag -> {
+        StreamProxy.stream(configTags()).forEach(tag -> {
             Long archiveTime = System.currentTimeMillis();
             Map<String, String> valueMap = cacheUtil.scan(tag, latestLocalArchiveTime(tag), archiveTime);
             if (valueMap.size() != 0) {

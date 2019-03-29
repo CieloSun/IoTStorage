@@ -5,6 +5,7 @@ import com.cielo.demo.model.user.Role;
 import com.cielo.demo.model.user.User;
 import com.cielo.demo.service.core.UserService;
 import com.cielo.storage.api.KVStoreUtil;
+import com.cielo.storage.tool.StreamProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,7 +67,7 @@ public class UserController {
 
     @GetMapping("permission/{token}")
     public Set<Permission> showPermission(@PathVariable String token) throws Exception {
-        return getRole(token).getPermissions().parallelStream().map(permissionId -> KVStoreUtil.get(Permission.key(permissionId), Permission.class)).collect(Collectors.toSet());
+        return StreamProxy.stream(getRole(token).getPermissions()).map(permissionId -> KVStoreUtil.get(Permission.key(permissionId), Permission.class)).collect(Collectors.toSet());
     }
 
     @PostMapping("admin/{token}")

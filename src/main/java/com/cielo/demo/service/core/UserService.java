@@ -3,6 +3,7 @@ package com.cielo.demo.service.core;
 import com.cielo.demo.model.user.Role;
 import com.cielo.demo.model.user.User;
 import com.cielo.storage.api.KVStoreUtil;
+import com.cielo.storage.tool.StreamProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +41,7 @@ public class UserService {
     }
 
     public void authPermission(Role role, Integer permission) throws NoPermissionException {
-        if (!role.getPermissions().parallelStream().anyMatch(permissionId -> permissionId == permission))
+        if (!StreamProxy.stream(role.getPermissions()).anyMatch(permissionId -> permissionId == permission))
             throw new NoPermissionException("You do not have the permission.");
     }
 

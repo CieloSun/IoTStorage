@@ -1,7 +1,5 @@
 package com.cielo.storage.api;
 
-import com.cielo.storage.fastdfs.FileInfo;
-
 import java.util.Collection;
 import java.util.Map;
 

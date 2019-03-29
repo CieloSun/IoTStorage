@@ -5,6 +5,7 @@ import com.cielo.storage.config.FDFSConfig;
 import com.cielo.storage.fastdfs.FastdfsClient;
 import com.cielo.storage.fastdfs.FileMetadata;
 import com.cielo.storage.fastdfs.TrackerServer;
+import com.cielo.storage.tool.StreamProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
     private FastdfsClient fastdfsClient;
 
     private List<TrackerServer> getTrackers() {
-        return fdfsConfig.getTrackers().parallelStream().map(s -> s.split(":", 2)).map(ss -> {
+        return StreamProxy.stream(fdfsConfig.getTrackers()).map(s -> s.split(":", 2)).map(ss -> {
             int port = 80;
             if (ss.length == 2) port = Integer.parseInt(ss[1]);
             return new TrackerServer(ss[0], port);
