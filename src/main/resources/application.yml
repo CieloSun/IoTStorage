@@ -5,7 +5,7 @@ server:
 
 ssdb:
   host: ws.cielosun.club
-  port: 32771
+  port: 32768
   scan-number: 10000
   max-size-of-single-value: 256
 
