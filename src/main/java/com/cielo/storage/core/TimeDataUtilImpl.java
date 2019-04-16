@@ -141,10 +141,10 @@ class TimeDataUtilImpl implements TimeDataUtil {
                 } else fileId = persistUtil.upload(content);
                 if (StringUtils.hasText(fileId)) {
                     cacheUtil.set(tag, LATEST_ARCHIVE, archiveTime);
-                    Map<Object, Object> syncMap = new HashMap<>();
-                    syncMap.put(LATEST_ARCHIVE, archiveTime);
-                    syncMap.put(archiveTime, fileId);
-                    kvStoreUtil.hMultiSet(tag, syncMap);
+                    Map<Object, Object> map = new HashMap<>();
+                    map.put(LATEST_ARCHIVE, archiveTime);
+                    map.put(archiveTime, fileId);
+                    kvStoreUtil.hMultiSet(tag, map);
                     logger.info(tag + ":" + fileId + " has archived on " + new Date(archiveTime));
                 } else logger.info(tag + " cannot archive.");
             } else logger.info("Nothing needs to archive.");
