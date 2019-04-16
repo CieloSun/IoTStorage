@@ -26,14 +26,18 @@ class TimeDataUtilImpl implements TimeDataUtil {
     private static final String LATEST_VAL = "latest_val";
     private static final String LATEST_TIME = "latest_time";
     Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final PersistUtil persistUtil;
+    private final KVStoreUtil kvStoreUtil;
+    private final CacheUtil cacheUtil;
+    private final TimeDataConfig timeDataConfig;
+
     @Autowired
-    private PersistUtil persistUtil;
-    @Autowired
-    private KVStoreUtil kvStoreUtil;
-    @Autowired
-    private CacheUtil cacheUtil;
-    @Autowired
-    private TimeDataConfig timeDataConfig;
+    public TimeDataUtilImpl(PersistUtil persistUtil, KVStoreUtil kvStoreUtil, CacheUtil cacheUtil, TimeDataConfig timeDataConfig) {
+        this.persistUtil = persistUtil;
+        this.kvStoreUtil = kvStoreUtil;
+        this.cacheUtil = cacheUtil;
+        this.timeDataConfig = timeDataConfig;
+    }
 
     private Long latestSyncArchiveTime(DataTag dataTag) {
         Response response = kvStoreUtil.hGet(dataTag, LATEST_ARCHIVE);
@@ -44,13 +48,13 @@ class TimeDataUtilImpl implements TimeDataUtil {
     private Long latestLocalArchiveTime(DataTag dataTag) {
         Object val = cacheUtil.getVal(dataTag, LATEST_ARCHIVE);
         if (val instanceof Long) return (Long) val;
-        return 0l;
+        return 0L;
     }
 
     private Long latestLocalSaveTime(DataTag dataTag) {
         Object val = cacheUtil.getVal(dataTag, LATEST_TIME);
         if (val instanceof Long) return (Long) val;
-        return 0l;
+        return 0L;
     }
 
     @Override
@@ -85,7 +89,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
         if (endTime >= latestSyncArchiveTime) map.putAll(cacheUtil.scan(dataTag, startTime, endTime, clazz));
         if (startTime < latestSyncArchiveTime)
-            StreamProxy.stream(kvStoreUtil.hScan(dataTag, startTime, kvStoreUtil.hLowerBoundKey(dataTag, endTime).asLong()).values()).map(Try.of(fileId -> persistUtil.downloadMap(fileId))).forEach(map::putAll);
+            StreamProxy.stream(kvStoreUtil.hScan(dataTag, startTime, kvStoreUtil.hLowerBoundKey(dataTag, endTime).asLong()).values()).map(Try.of(persistUtil::downloadMap)).forEach(map::putAll);
         StreamProxy.stream(map.keySet()).filter(key -> (Long) key < startTime || (Long) key > endTime).forEach(map::remove);
         return map;
     }
@@ -125,7 +129,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public void archiveJob() {
         StreamProxy.stream(configTags()).forEach(tag -> {
             Long archiveTime = System.currentTimeMillis();
-            Map<String, String> valueMap = cacheUtil.scan(tag, latestLocalArchiveTime(tag), archiveTime);
+            Map valueMap = cacheUtil.scan(tag, latestLocalArchiveTime(tag), archiveTime);
             if (valueMap.size() != 0) {
                 String fileId;
                 String content = JSONUtil.toMapJSON(valueMap);

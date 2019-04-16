@@ -19,13 +19,13 @@ public class JSONUtil {
     }
 
     //将值为JSONString的Map转变为一个JSONMap
-    public static String toMapJSON(Map<? extends Object, ? extends Object> jsonMap) {
+    public static String toMapJSON(Map<?, ?> jsonMap) {
         StringBuilder stringBuilder = new StringBuilder("{");
         StreamProxy.stream(jsonMap.entrySet()).map(entry -> "\"" + entry.getKey() + "\"" + ":" + entry.getValue() + ",").forEach(stringBuilder::append);
         return stringBuilder.replace(stringBuilder.length() - 1, stringBuilder.length(), "}").toString();
     }
 
-    public static Map toMap(Map<? extends Object, ? extends Object> jsonMap) {
+    public static Map toMap(Map<?, ?> jsonMap) {
         return JSON.parseObject(toMapJSON(jsonMap), Map.class);
     }
 }

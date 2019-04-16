@@ -107,7 +107,7 @@ class PersistUtilImpl implements CommandLineRunner, PersistUtil {
 
     @Override
     public byte[] downloadBytes(String path) throws Exception {
-        if (path.contains(SHORT_CONTENT_LABEL)) return path.replaceFirst(SHORT_CONTENT_LABEL, "").getBytes();
+        if (path.startsWith(SHORT_CONTENT_LABEL)) return path.replaceFirst(SHORT_CONTENT_LABEL, "").getBytes();
         byte[] bytes = fdfsUtil.download(path);
         if (compressionConfig.isCompression()) bytes = decompress(bytes);
         return bytes;
@@ -125,7 +125,7 @@ class PersistUtilImpl implements CommandLineRunner, PersistUtil {
 
     @Override
     public void delete(String path) {
-        if (path.contains(SHORT_CONTENT_LABEL)) return;
+        if (path.startsWith(SHORT_CONTENT_LABEL)) return;
         fdfsUtil.delete(path);
     }
 
