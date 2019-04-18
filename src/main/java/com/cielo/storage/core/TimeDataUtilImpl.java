@@ -73,6 +73,10 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public <T> T get(DataTag dataTag, Long timestamp, Class<T> clazz) throws Exception {
         T t = cacheUtil.get(dataTag, timestamp, clazz);
         if (t != null) return t;
+        return getSync(dataTag, timestamp, clazz);
+    }
+
+    private <T> T getSync(DataTag dataTag, Long timestamp, Class<T> clazz) throws Exception {
         return (T) persistUtil.downloadMap(kvStoreUtil.hLowerBoundVal(dataTag, timestamp)).get(timestamp);
     }
 
@@ -97,9 +101,8 @@ class TimeDataUtilImpl implements TimeDataUtil {
     @Override
     public <T> T getLatest(DataTag dataTag, Class<T> clazz) throws Exception {
         Long latestSyncArchiveTime = latestSyncArchiveTime(dataTag);
-        long latestLocalTime = latestLocalSaveTime(dataTag);
-        if (latestLocalTime > latestSyncArchiveTime) return cacheUtil.get(dataTag, LATEST_VAL, clazz);
-        else return get(dataTag, latestSyncArchiveTime, clazz);
+        if (latestLocalSaveTime(dataTag) > latestSyncArchiveTime) return cacheUtil.get(dataTag, LATEST_VAL, clazz);
+        return getSync(dataTag, latestSyncArchiveTime, clazz);
     }
 
     @Override
