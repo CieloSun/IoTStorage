@@ -14,11 +14,14 @@ import org.nutz.ssdb4j.spi.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 //用于管理较小value，采用小数据合并的方式归档SSDB中数据
 @Service
@@ -46,12 +49,6 @@ class TimeDataUtilImpl implements TimeDataUtil {
         return response.asLong();
     }
 
-    private Long latestLocalArchiveTime(InternalKey internalKey) {
-        Object val = cacheUtil.getVal(internalKey, LATEST_ARCHIVE);
-        if (val instanceof Long) return (Long) val;
-        return 0L;
-    }
-
     private Long latestLocalSaveTime(InternalKey internalKey) {
         Object val = cacheUtil.getVal(internalKey, LATEST_TIME);
         if (val instanceof Long) return (Long) val;
@@ -67,17 +64,21 @@ class TimeDataUtilImpl implements TimeDataUtil {
         map.put(LATEST_VAL, val);
         map.put(LATEST_TIME, timestamp);
         cacheUtil.multiSet(internalKey, map);
-        setTags(internalKey);
-    }
-
-    @Async
-    protected void setTags(InternalKey internalKey) {
-        StreamProxy.stream(internalKey.typeTagPairs().entrySet()).forEach(e -> kvStoreUtil.sSet(e.getKey(), e.getValue()));
     }
 
     @Override
-    public Set<String> getTags(String type) {
-        return kvStoreUtil.sGetAll(type);
+    public List<String> getInternalKeys(String primeType, String primeTag) {
+        return getInternalKeys(primeType + "/" + primeTag);
+    }
+
+    @Override
+    public List<String> getInternalKeys(String primeType, String searchType, String searchTag) {
+        return StreamProxy.stream(getInternalKeys(primeType + "/")).filter(s -> s.contains(searchType + "/" + searchTag)).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getInternalKeys(String internalKeyPrefix) {
+        return kvStoreUtil.hScanName(internalKeyPrefix);
     }
 
     //获取可能归档的hashMap中具体某条数据
@@ -124,7 +125,6 @@ class TimeDataUtilImpl implements TimeDataUtil {
         if (timeDataConfig.getDeleteValueTogether())
             persistUtil.multiDelete(kvStoreUtil.hGetAll(internalKey).mapString().values());
         kvStoreUtil.hClear(internalKey);
-        StreamProxy.stream(internalKey.typeTagPairs().entrySet()).forEach(e -> kvStoreUtil.sDel(e.getKey(), e.getValue()));
     }
 
     @Override
@@ -135,35 +135,35 @@ class TimeDataUtilImpl implements TimeDataUtil {
         kvStoreUtil.hDel(internalKey, startTime, endTime);
     }
 
-    private Set<InternalKey> configTags() {
-        Set<InternalKey> internalKeys = new HashSet<>();
-        StreamProxy.stream(timeDataConfig.getArchiveTags()).forEach(internalKeyStr -> StreamProxy.stream(cacheUtil.searchCacheNames(internalKeyStr)).map(InternalKey::new).forEach(internalKeys::add));
-        return internalKeys;
+    private Long latestLocalArchiveTime(InternalKey internalKey) {
+        Object val = cacheUtil.getVal(internalKey, LATEST_ARCHIVE);
+        if (val instanceof Long) return (Long) val;
+        return 0L;
     }
 
     //hashMap中数据归档,hashMap中key为时间戳，val为JSON对象
     @Override
     public void archiveJob() {
-        StreamProxy.parallelStream(configTags()).forEach(tag -> {
+        StreamProxy.parallelStream(cacheUtil.allInternalKeys()).forEach(internalKey -> {
             Long archiveTime = System.currentTimeMillis();
-            Map valueMap = cacheUtil.scan(tag, latestLocalArchiveTime(tag), archiveTime);
+            Map valueMap = cacheUtil.scan(internalKey, latestLocalArchiveTime(internalKey), archiveTime);
             if (valueMap.size() != 0) {
                 String fileId;
                 String content = JSONUtil.toMapJSON(valueMap);
                 if (timeDataConfig.getSaveKeyInValue()) {
                     Map<String, String> infos = new HashMap<>();
-                    infos.put("tag", tag.toString());
+                    infos.put("internalKey", internalKey.toString());
                     infos.put("timestamp", archiveTime.toString());
                     fileId = persistUtil.upload(content, infos);
                 } else fileId = persistUtil.upload(content);
                 if (StringUtils.hasText(fileId)) {
-                    cacheUtil.set(tag, LATEST_ARCHIVE, archiveTime);
+                    cacheUtil.set(internalKey, LATEST_ARCHIVE, archiveTime);
                     Map<Object, Object> map = new HashMap<>();
                     map.put(LATEST_ARCHIVE, archiveTime);
                     map.put(archiveTime, fileId);
-                    kvStoreUtil.hMultiSet(tag, map);
-                    logger.info(tag + ":" + fileId + " has archived on " + new Date(archiveTime));
-                } else logger.info(tag + " cannot archive.");
+                    kvStoreUtil.hMultiSet(internalKey, map);
+                    logger.info(internalKey + ":" + fileId + " has archived on " + new Date(archiveTime));
+                } else logger.info(internalKey + " cannot archive.");
             } else logger.info("Nothing needs to archive.");
         });
     }

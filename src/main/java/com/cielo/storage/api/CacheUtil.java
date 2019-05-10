@@ -21,6 +21,8 @@ public interface CacheUtil {
 
     List<String> searchCacheNames(String prefix);
 
+    List<InternalKey> allInternalKeys();
+
     void clear(InternalKey cacheName);
 
     void delete(InternalKey cacheName, Long startKey, Long endKey);

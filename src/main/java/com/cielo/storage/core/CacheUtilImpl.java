@@ -13,10 +13,7 @@ import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -101,6 +98,11 @@ class CacheUtilImpl implements CacheUtil {
     }
 
     @Override
+    public List<InternalKey> allInternalKeys(){
+        return StreamProxy.stream(Arrays.asList(Objects.requireNonNull(ehCacheCacheManager.getCacheManager()).getCacheNames())).map(InternalKey::new).collect(Collectors.toList());
+    }
+
+  @Override
     public int size(InternalKey internalKey) {
         return getCache(internalKey).getSize();
     }

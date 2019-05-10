@@ -2,13 +2,17 @@ package com.cielo.storage.api;
 
 import com.cielo.storage.model.InternalKey;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public interface TimeDataUtil {
     void set(InternalKey internalKey, Object val);
 
-    Set<String> getTags(String type);
+    List<String> getInternalKeys(String primeType, String primeTag);
+
+    List<String> getInternalKeys(String primeType, String searchType, String searchTag);
+
+    List<String> getInternalKeys(String internalKeyPrefix);
 
     //获取可能归档的hashMap中具体某条数据
     <T> T get(InternalKey internalKey, Long timestamp, Class<T> clazz) throws Exception;
