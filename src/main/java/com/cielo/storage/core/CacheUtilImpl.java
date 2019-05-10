@@ -3,7 +3,7 @@ package com.cielo.storage.core;
 import com.alibaba.fastjson.JSON;
 import com.cielo.storage.api.CacheUtil;
 import com.cielo.storage.config.TimeDataConfig;
-import com.cielo.storage.model.DataTag;
+import com.cielo.storage.model.InternalKey;
 import com.cielo.storage.tool.StreamProxy;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
@@ -28,8 +28,8 @@ class CacheUtilImpl implements CacheUtil {
     private TimeDataConfig timeDataConfig;
 
     //利用不同的cache来实现类hashMap结构
-    private Cache getCache(DataTag dataTag) {
-        String cacheName = dataTag.toString();
+    private Cache getCache(InternalKey internalKey) {
+        String cacheName = internalKey.toString();
         CacheManager cacheManager = ehCacheCacheManager.getCacheManager();
         Cache cache = cacheManager != null ? cacheManager.getCache(cacheName) : null;
         if (cache == null) {
@@ -48,48 +48,48 @@ class CacheUtilImpl implements CacheUtil {
     }
 
     @Override
-    public void set(DataTag cacheName, Object key, Object val) {
+    public void set(InternalKey cacheName, Object key, Object val) {
         getCache(cacheName).put(new Element(key, val));
     }
 
     @Override
-    public void multiSet(DataTag cacheName, Map<Object, Object> map) {
+    public void multiSet(InternalKey cacheName, Map<Object, Object> map) {
         getCache(cacheName).putAll(StreamProxy.stream(map.entrySet()).map(entry -> new Element(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
     }
 
     @Override
-    public void delete(DataTag cacheName, Long startKey, Long endKey) {
+    public void delete(InternalKey cacheName, Long startKey, Long endKey) {
         Cache cache = getCache(cacheName);
         List<Long> keys = getLongKeys(cache);
         cache.removeAll(StreamProxy.stream(keys).filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toList()));
     }
 
     @Override
-    public void clear(DataTag cacheName) {
+    public void clear(InternalKey cacheName) {
         Objects.requireNonNull(ehCacheCacheManager.getCacheManager()).removeCache(cacheName.toString());
     }
 
     @Override
-    public Object getVal(DataTag cacheName, Object key) {
+    public Object getVal(InternalKey cacheName, Object key) {
         Element element = getCache(cacheName).get(key);
         if (element == null) return null;
         return element.getObjectValue();
     }
 
     @Override
-    public <T> T get(DataTag cacheName, Object key, Class<T> clazz) {
+    public <T> T get(InternalKey cacheName, Object key, Class<T> clazz) {
         return JSON.parseObject(getCache(cacheName).get(key).getObjectValue().toString(), clazz);
     }
 
     @Override
-    public <T> Map<Object, T> scan(DataTag cacheName, Long startKey, Long endKey, Class<T> clazz) {
+    public <T> Map<Object, T> scan(InternalKey cacheName, Long startKey, Long endKey, Class<T> clazz) {
         Cache cache = getCache(cacheName);
         List<Long> keys = getLongKeys(cache);
         return StreamProxy.stream(keys).filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toMap(Function.identity(), key -> JSON.parseObject(cache.get(key).getObjectValue().toString(), clazz), (a, b) -> b));
     }
 
     @Override
-    public Map scan(DataTag cacheName, Long startKey, Long endKey) {
+    public Map scan(InternalKey cacheName, Long startKey, Long endKey) {
         Cache cache = getCache(cacheName);
         List<Long> keys = getLongKeys(cache);
         return StreamProxy.stream(keys).filter(key -> rangeFilter(key, startKey, endKey)).collect(Collectors.toMap(Function.identity(), key -> cache.get(key).getObjectValue(), (a, b) -> b));
@@ -101,7 +101,7 @@ class CacheUtilImpl implements CacheUtil {
     }
 
     @Override
-    public int size(DataTag dataTag) {
-        return getCache(dataTag).getSize();
+    public int size(InternalKey internalKey) {
+        return getCache(internalKey).getSize();
     }
 }

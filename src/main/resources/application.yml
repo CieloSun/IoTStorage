@@ -24,7 +24,7 @@ init:
 device-config:
   archive-function-id-list: [2]
 time-data:
-  archive-tags: ["device_2"]
+  archive-tags: ["function/2"]
   # 归档间隔，单位秒
   archive-interval: 1800
   # 缓存清理时间，单位秒

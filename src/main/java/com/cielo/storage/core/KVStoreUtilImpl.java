@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
 import com.cielo.storage.api.KVStoreUtil;
 import com.cielo.storage.config.KVStoreConfig;
-import com.cielo.storage.model.DataTag;
+import com.cielo.storage.model.InternalKey;
 import com.cielo.storage.tool.CollectionUtil;
 import com.cielo.storage.tool.JSONUtil;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @Primary
@@ -213,65 +214,65 @@ class KVStoreUtilImpl implements CommandLineRunner, KVStoreUtil {
     //以下部分为hashMap相关操作
 
     @Override
-    public Response hSetVal(DataTag tag, Object key, Object val) {
-        return ssdb.hset(tag.toString(), key, val);
+    public Response hSetVal(InternalKey internalKey, Object key, Object val) {
+        return ssdb.hset(internalKey.toString(), key, val);
     }
 
     @Override
-    public Response hSet(DataTag tag, Object key, Object val) {
-        return ssdb.hset(tag.toString(), key, JSON.toJSONString(val));
+    public Response hSet(InternalKey internalKey, Object key, Object val) {
+        return ssdb.hset(internalKey.toString(), key, JSON.toJSONString(val));
     }
 
     @Override
-    public Response hMultiSet(DataTag dataTag, Map map) {
-        return ssdb.multi_hset(dataTag.toString(), map);
+    public Response hMultiSet(InternalKey internalKey, Map map) {
+        return ssdb.multi_hset(internalKey.toString(), map);
     }
 
     @Override
-    public Response hGet(DataTag tag, Object key) {
-        return ssdb.hget(tag.toString(), key);
+    public Response hGet(InternalKey internalKey, Object key) {
+        return ssdb.hget(internalKey.toString(), key);
     }
 
     @Override
-    public <T> T hGet(DataTag tag, Object key, Class<T> clazz, Feature... features) {
-        Response response = hGet(tag, key);
+    public <T> T hGet(InternalKey internalKey, Object key, Class<T> clazz, Feature... features) {
+        Response response = hGet(internalKey, key);
         if (response.notFound()) return null;
         return JSON.parseObject(response.asString(), clazz, features);
     }
 
     @Override
-    public Response hMultiGet(DataTag tag, Object... keys) {
-        return ssdb.multi_hget(tag.toString(), keys);
+    public Response hMultiGet(InternalKey internalKey, Object... keys) {
+        return ssdb.multi_hget(internalKey.toString(), keys);
     }
 
     @Override
-    public <T> List<T> hMultiGet(Class<T> clazz, DataTag tag, Object... keys) {
-        return JSON.parseArray(JSONUtil.toListJSON(CollectionUtil.toList(ssdb.multi_hget(tag.toString(), keys).mapString().values())), clazz);
+    public <T> List<T> hMultiGet(Class<T> clazz, InternalKey internalKey, Object... keys) {
+        return JSON.parseArray(JSONUtil.toListJSON(CollectionUtil.toList(ssdb.multi_hget(internalKey.toString(), keys).mapString().values())), clazz);
     }
 
     @Override
-    public Response hGetAll(DataTag tag) {
-        return ssdb.hgetall(tag.toString());
+    public Response hGetAll(InternalKey internalKey) {
+        return ssdb.hgetall(internalKey.toString());
     }
 
     @Override
-    public <T> List<T> hGetAll(DataTag tag, Class<T> clazz) {
-        return JSON.parseArray(JSONUtil.toListJSON(CollectionUtil.toList(hGetAll(tag).mapString().values())), clazz);
+    public <T> List<T> hGetAll(InternalKey internalKey, Class<T> clazz) {
+        return JSON.parseArray(JSONUtil.toListJSON(CollectionUtil.toList(hGetAll(internalKey).mapString().values())), clazz);
     }
 
     @Override
-    public List<String> hGetAllKeys(DataTag tag) {
-        return CollectionUtil.toList(ssdb.hgetall(tag.toString()).mapString().keySet());
+    public List<String> hGetAllKeys(InternalKey internalKey) {
+        return CollectionUtil.toList(ssdb.hgetall(internalKey.toString()).mapString().keySet());
     }
 
     @Override
-    public Integer hSize(DataTag tag) {
-        return ssdb.hsize(tag.toString()).asInt();
+    public Integer hSize(InternalKey internalKey) {
+        return ssdb.hsize(internalKey.toString()).asInt();
     }
 
     @Override
-    public boolean hExists(DataTag tag, Object key) {
-        return ssdb.hexists(tag.toString(), key).asInt() != 0;
+    public boolean hExists(InternalKey internalKey, Object key) {
+        return ssdb.hexists(internalKey.toString(), key).asInt() != 0;
     }
 
     @Override
@@ -285,89 +286,116 @@ class KVStoreUtilImpl implements CommandLineRunner, KVStoreUtil {
     }
 
     @Override
-    public List<String> hScanName(DataTag tag) {
-        return hScanName(tag.toString());
+    public List<String> hScanName(InternalKey internalKey) {
+        return hScanName(internalKey.toString());
     }
 
     @Override
-    public List<String> hScanKeys(DataTag tag, Object fromKey, Object endKey) {
-        return ssdb.hkeys(tag.toString(), fromKey, endKey, KVStoreConfig.getScanNumber()).listString();
+    public List<String> hScanKeys(InternalKey internalKey, Object fromKey, Object endKey) {
+        return ssdb.hkeys(internalKey.toString(), fromKey, endKey, KVStoreConfig.getScanNumber()).listString();
     }
 
     @Override
-    public List<String> hScanKeys(DataTag tag, Object prefix) {
-        return hScanKeys(tag, prefix, prefix + "}");
+    public List<String> hScanKeys(InternalKey internalKey, Object prefix) {
+        return hScanKeys(internalKey, prefix, prefix + "}");
     }
 
     @Override
-    public Map<String, String> hScan(DataTag tag, Object fromKey, Object endKey) {
-        return ssdb.hscan(tag.toString(), fromKey, endKey, KVStoreConfig.getScanNumber()).mapString();
+    public Map<String, String> hScan(InternalKey internalKey, Object fromKey, Object endKey) {
+        return ssdb.hscan(internalKey.toString(), fromKey, endKey, KVStoreConfig.getScanNumber()).mapString();
     }
 
     @Override
-    public Map<String, String> hScan(DataTag tag, Object prefix) {
-        return hScan(tag, prefix, prefix + "}");
+    public Map<String, String> hScan(InternalKey internalKey, Object prefix) {
+        return hScan(internalKey, prefix, prefix + "}");
     }
 
     @Override
-    public <T> Map<Object, T> hScan(DataTag tag, Object fromKey, Object endKey, Class<T> clazz) {
-        return JSONUtil.toMap(hScan(tag, fromKey, endKey));
+    public <T> Map<Object, T> hScan(InternalKey internalKey, Object fromKey, Object endKey, Class<T> clazz) {
+        return JSONUtil.toMap(hScan(internalKey, fromKey, endKey));
     }
 
     @Override
-    public <T> Map<Object, T> hScan(DataTag tag, Object prefix, Class<T> clazz) {
-        return JSONUtil.toMap(hScan(tag, prefix));
+    public <T> Map<Object, T> hScan(InternalKey internalKey, Object prefix, Class<T> clazz) {
+        return JSONUtil.toMap(hScan(internalKey, prefix));
     }
 
     @Override
-    public String hScanValues(DataTag tag, Object fromKey, Object endKey) {
-        return JSONUtil.toListJSON(CollectionUtil.toList(hScan(tag, fromKey, endKey).values()));
+    public String hScanValues(InternalKey internalKey, Object fromKey, Object endKey) {
+        return JSONUtil.toListJSON(CollectionUtil.toList(hScan(internalKey, fromKey, endKey).values()));
     }
 
     @Override
-    public String hScanValues(DataTag tag, Object prefix) {
-        return JSONUtil.toListJSON(CollectionUtil.toList(hScan(tag, prefix).values()));
+    public String hScanValues(InternalKey internalKey, Object prefix) {
+        return JSONUtil.toListJSON(CollectionUtil.toList(hScan(internalKey, prefix).values()));
     }
 
     @Override
-    public <T> List<T> hScanValues(DataTag tag, Object fromKey, Object endKey, Class<T> clazz) {
-        return JSON.parseArray(hScanValues(tag, fromKey, endKey), clazz);
+    public <T> List<T> hScanValues(InternalKey internalKey, Object fromKey, Object endKey, Class<T> clazz) {
+        return JSON.parseArray(hScanValues(internalKey, fromKey, endKey), clazz);
     }
 
     @Override
-    public <T> List<T> hScanValues(DataTag tag, Object prefix, Class<T> clazz) {
-        return JSON.parseArray(hScanValues(tag, prefix), clazz);
+    public <T> List<T> hScanValues(InternalKey internalKey, Object prefix, Class<T> clazz) {
+        return JSON.parseArray(hScanValues(internalKey, prefix), clazz);
     }
 
     @Override
-    public Response hLowerBoundKey(DataTag tag, Object key) {
-        return ssdb.hkeys(tag.toString(), key, "", 1);
+    public Response hLowerBoundKey(InternalKey internalKey, Object key) {
+        return ssdb.hkeys(internalKey.toString(), key, "", 1);
     }
 
     @Override
-    public Response hLowerBound(DataTag tag, Object key) {
-        return ssdb.hscan(tag.toString(), key, "", 1);
+    public Response hLowerBound(InternalKey internalKey, Object key) {
+        return ssdb.hscan(internalKey.toString(), key, "", 1);
     }
 
     @Override
-    public String hLowerBoundVal(DataTag tag, Object key) {
-        return hLowerBound(tag, key).mapString().values().iterator().next();
+    public String hLowerBoundVal(InternalKey internalKey, Object key) {
+        return hLowerBound(internalKey, key).mapString().values().iterator().next();
     }
 
     @Override
-    public Response hDel(DataTag tag, Object key) {
-        return ssdb.hdel(tag.toString(), key);
-    }
-
-    @Override
-    @Async
-    public Response hDel(DataTag tag, Object fromKey, Object endKey) {
-        return ssdb.multi_hdel(tag.toString(), hScanKeys(tag, fromKey, endKey));
+    public Response hDel(InternalKey internalKey, Object key) {
+        return ssdb.hdel(internalKey.toString(), key);
     }
 
     @Override
     @Async
-    public Response hClear(DataTag tag) {
-        return ssdb.hclear(tag.toString());
+    public Response hDel(InternalKey internalKey, Object fromKey, Object endKey) {
+        return ssdb.multi_hdel(internalKey.toString(), hScanKeys(internalKey, fromKey, endKey));
+    }
+
+    @Override
+    @Async
+    public Response hClear(InternalKey internalKey) {
+        return ssdb.hclear(internalKey.toString());
+    }
+
+    @Override
+    public Response sSet(Object name, Object element) {
+        return ssdb.hset(name, element, new byte[0]);
+    }
+
+    @Override
+    public Set<String> sGetAll(Object name) {
+        return ssdb.hgetall(name).mapString().keySet();
+    }
+
+    @Override
+    public List<String> sScan(Object name, Object startElement, Object endElement) {
+        return ssdb.hkeys(name, startElement, endElement, KVStoreConfig.getScanNumber()).listString();
+    }
+
+    @Override
+    @Async
+    public Response sClear(Object name) {
+        return ssdb.hclear(name);
+    }
+
+    @Override
+    @Async
+    public Response sDel(Object name, Object element) {
+        return ssdb.hdel(name, element);
     }
 }

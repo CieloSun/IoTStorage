@@ -4,7 +4,7 @@ import com.cielo.demo.model.device.Device;
 import com.cielo.demo.model.device.DeviceInfoModel;
 import com.cielo.storage.api.KVStoreUtil;
 import com.cielo.storage.api.TimeDataUtil;
-import com.cielo.storage.model.DataTag;
+import com.cielo.storage.model.InternalKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,18 +13,14 @@ import java.util.Map;
 
 @Service
 public class DeviceService {
-    public static final DataTag DEVICE = new DataTag("configDevice");
+    public static final InternalKey DEVICE = new InternalKey("configDevice");
     @Autowired
     private KVStoreUtil kvStoreUtil;
     @Autowired
     private TimeDataUtil timeDataUtil;
 
-    public DataTag deviceTag(DeviceInfoModel deviceInfoModel) {
-        return deviceTag(deviceInfoModel.getDeviceId(), deviceInfoModel.getFunctionId());
-    }
-
-    public DataTag deviceTag(String deviceId, Integer functionId) {
-        return new DataTag("device", functionId.toString(), deviceId);
+    public InternalKey deviceTag(String deviceId, Integer functionId) {
+        return new InternalKey("function/" + functionId.toString(), "device/" + deviceId);
     }
 
     public void editDevice(Device device) {
@@ -52,8 +48,7 @@ public class DeviceService {
     }
 
     public void saveDeviceInfo(DeviceInfoModel deviceInfoModel) {
-        DataTag hName = deviceTag(deviceInfoModel);
-        timeDataUtil.set(hName, deviceInfoModel);
+        timeDataUtil.set(deviceTag(deviceInfoModel.getDeviceId(), deviceInfoModel.getFunctionId()), deviceInfoModel);
     }
 
     public DeviceInfoModel getLatestDeviceInfo(String deviceId, Integer functionId) throws Exception {

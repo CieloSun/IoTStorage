@@ -1,12 +1,13 @@
 package com.cielo.storage.api;
 
 import com.alibaba.fastjson.parser.Feature;
-import com.cielo.storage.model.DataTag;
+import com.cielo.storage.model.InternalKey;
 import org.nutz.ssdb4j.spi.Response;
 import org.springframework.scheduling.annotation.Async;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface KVStoreUtil {
     //设置一个基本类型值
@@ -88,67 +89,75 @@ public interface KVStoreUtil {
     //某key值自减
     Response decr(Object key, int val);
 
-    Response hSetVal(DataTag tag, Object key, Object val);
+    Response hSetVal(InternalKey internalKey, Object key, Object val);
 
-    Response hSet(DataTag tag, Object key, Object val);
+    Response hSet(InternalKey internalKey, Object key, Object val);
 
-    Response hMultiSet(DataTag tag, Map map);
+    Response hMultiSet(InternalKey internalKey, Map map);
 
-    Response hGet(DataTag tag, Object key);
+    Response hGet(InternalKey internalKey, Object key);
 
-    <T> T hGet(DataTag tag, Object key, Class<T> clazz, Feature... features);
+    <T> T hGet(InternalKey internalKey, Object key, Class<T> clazz, Feature... features);
 
-    Response hMultiGet(DataTag tag, Object... keys);
+    Response hMultiGet(InternalKey internalKey, Object... keys);
 
-    <T> List<T> hMultiGet(Class<T> clazz, DataTag tag, Object... keys);
+    <T> List<T> hMultiGet(Class<T> clazz, InternalKey internalKey, Object... keys);
 
-    Response hGetAll(DataTag tag);
+    Response hGetAll(InternalKey internalKey);
 
-    <T> List<T> hGetAll(DataTag tag, Class<T> clazz);
+    <T> List<T> hGetAll(InternalKey internalKey, Class<T> clazz);
 
-    List<String> hGetAllKeys(DataTag tag);
+    List<String> hGetAllKeys(InternalKey internalKey);
 
-    Integer hSize(DataTag tag);
+    Integer hSize(InternalKey internalKey);
 
-    boolean hExists(DataTag tag, Object key);
+    boolean hExists(InternalKey internalKey, Object key);
 
     List<String> hScanName(Object fromName, Object endName);
 
     List<String> hScanName(Object prefix);
 
-    List<String> hScanName(DataTag tag);
+    List<String> hScanName(InternalKey internalKey);
 
-    List<String> hScanKeys(DataTag tag, Object fromKey, Object endKey);
+    List<String> hScanKeys(InternalKey internalKey, Object fromKey, Object endKey);
 
-    List<String> hScanKeys(DataTag tag, Object prefix);
+    List<String> hScanKeys(InternalKey internalKey, Object prefix);
 
-    Map<String, String> hScan(DataTag tag, Object fromKey, Object endKey);
+    Map<String, String> hScan(InternalKey internalKey, Object fromKey, Object endKey);
 
-    Map<String, String> hScan(DataTag tag, Object prefix);
+    Map<String, String> hScan(InternalKey internalKey, Object prefix);
 
-    <T> Map<Object, T> hScan(DataTag tag, Object fromKey, Object endKey, Class<T> clazz);
+    <T> Map<Object, T> hScan(InternalKey internalKey, Object fromKey, Object endKey, Class<T> clazz);
 
-    <T> Map<Object, T> hScan(DataTag tag, Object prefix, Class<T> clazz);
+    <T> Map<Object, T> hScan(InternalKey internalKey, Object prefix, Class<T> clazz);
 
-    String hScanValues(DataTag tag, Object fromKey, Object endKey);
+    String hScanValues(InternalKey internalKey, Object fromKey, Object endKey);
 
-    String hScanValues(DataTag tag, Object prefix);
+    String hScanValues(InternalKey internalKey, Object prefix);
 
-    <T> List<T> hScanValues(DataTag tag, Object fromKey, Object endKey, Class<T> clazz);
+    <T> List<T> hScanValues(InternalKey internalKey, Object fromKey, Object endKey, Class<T> clazz);
 
-    <T> List<T> hScanValues(DataTag tag, Object prefix, Class<T> clazz);
+    <T> List<T> hScanValues(InternalKey internalKey, Object prefix, Class<T> clazz);
 
-    Response hLowerBoundKey(DataTag tag, Object key);
+    Response hLowerBoundKey(InternalKey internalKey, Object key);
 
-    Response hLowerBound(DataTag tag, Object key);
+    Response hLowerBound(InternalKey internalKey, Object key);
 
-    String hLowerBoundVal(DataTag tag, Object key);
+    String hLowerBoundVal(InternalKey internalKey, Object key);
 
-    Response hDel(DataTag tag, Object key);
+    Response hDel(InternalKey internalKey, Object key);
 
-    @Async
-    Response hDel(DataTag tag, Object fromKey, Object endKey);
+    Response hDel(InternalKey internalKey, Object fromKey, Object endKey);
 
-    @Async
-    Response hClear(DataTag tag);
+    Response hClear(InternalKey internalKey);
+
+    Response sSet(Object name, Object element);
+
+    Set<String> sGetAll(Object name);
+
+    List<String> sScan(Object name, Object startElement, Object endElement);
+
+    Response sClear(Object name);
+
+    Response sDel(Object name, Object element);
 }

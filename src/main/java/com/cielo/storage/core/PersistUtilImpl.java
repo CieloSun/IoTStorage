@@ -132,6 +132,6 @@ class PersistUtilImpl implements CommandLineRunner, PersistUtil {
     @Override
     @Async
     public void multiDelete(Collection<String> paths) {
-        StreamProxy.stream(paths).forEach(this::delete);
+        StreamProxy.parallelStream(paths).forEach(this::delete);
     }
 }

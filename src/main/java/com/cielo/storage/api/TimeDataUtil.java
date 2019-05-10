@@ -1,23 +1,26 @@
 package com.cielo.storage.api;
 
-import com.cielo.storage.model.DataTag;
+import com.cielo.storage.model.InternalKey;
 
 import java.util.Map;
+import java.util.Set;
 
 public interface TimeDataUtil {
-    void set(DataTag dataTag, Object val);
+    void set(InternalKey internalKey, Object val);
+
+    Set<String> getTags(String type);
 
     //获取可能归档的hashMap中具体某条数据
-    <T> T get(DataTag dataTag, Long timestamp, Class<T> clazz) throws Exception;
+    <T> T get(InternalKey internalKey, Long timestamp, Class<T> clazz) throws Exception;
 
     //获取可能归档的hashMap中某段数据
-    <T> Map<Object, T> get(DataTag dataTag, Long startTime, Long endTime, Class<T> clazz);
+    <T> Map<Object, T> get(InternalKey internalKey, Long startTime, Long endTime, Class<T> clazz);
 
-    <T> T getLatest(DataTag dataTag, Class<T> clazz) throws Exception;
+    <T> T getLatest(InternalKey internalKey, Class<T> clazz) throws Exception;
 
-    void del(DataTag dataTag);
+    void del(InternalKey internalKey);
 
-    void del(DataTag dataTag, Long startTime, Long endTime);
+    void del(InternalKey internalKey, Long startTime, Long endTime);
 
     void archiveJob();
 }
