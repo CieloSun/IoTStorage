@@ -19,8 +19,8 @@ public class DeviceService {
     @Autowired
     private TimeDataUtil timeDataUtil;
 
-    public InternalKey deviceTag(String deviceId, Integer functionId) {
-        return new InternalKey("function/" + functionId.toString(), "device/" + deviceId);
+    public String[] deviceTag(String deviceId, Integer functionId) {
+        return new String[]{"function/" + functionId.toString(), "device/" + deviceId};
     }
 
     public void editDevice(Device device) {
@@ -56,7 +56,7 @@ public class DeviceService {
     }
 
     //批量归档中获取多个对象
-    public Map<Object, DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) {
+    public Map<Object, DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) throws Exception {
         return timeDataUtil.get(deviceTag(deviceId, functionId), startDate, endDate, DeviceInfoModel.class);
     }
 

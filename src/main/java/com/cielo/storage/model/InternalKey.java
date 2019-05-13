@@ -1,5 +1,6 @@
 package com.cielo.storage.model;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,6 +15,8 @@ public class InternalKey {
     }
 
     public InternalKey(String... tagsInStr) {
+        //第一个tag为prime key，其他tag排序保证所有tag顺序恒定
+        Arrays.sort(tagsInStr, 1, tagsInStr.length);
         InternalKey internalKey = this;
         for (int i = 0; i < tagsInStr.length; ++i) {
             String tagInStr = tagsInStr[i];

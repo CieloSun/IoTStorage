@@ -10,8 +10,8 @@ public class StreamProxy {
         return collection.size() < PARALLEL_SIZE ? collection.stream() : collection.parallelStream();
     }
 
-    public static <T> Stream<T> stream(int parallelSize, Collection<T> collection) {
-        return collection.size() < parallelSize ? collection.stream() : collection.parallelStream();
+    public static <T> Stream<T> stream(int serialSize, Collection<T> collection) {
+        return collection.size() < serialSize ? collection.stream() : collection.parallelStream();
     }
 
     public static <T> Stream<T> parallelStream(Collection<T> collection) {
