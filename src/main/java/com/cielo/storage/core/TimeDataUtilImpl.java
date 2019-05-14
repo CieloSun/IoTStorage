@@ -32,7 +32,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     private static final String LATEST_ARCHIVE = "latest_file";
     private static final String LATEST_VAL = "latest_val";
     private static final String LATEST_TIME = "latest_time";
-    Logger logger = LoggerFactory.getLogger(this.getClass());
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
     private final PersistUtil persistUtil;
     private final KVStoreUtil kvStoreUtil;
     private final CacheUtil cacheUtil;
@@ -46,13 +46,13 @@ class TimeDataUtilImpl implements TimeDataUtil {
         this.timeDataConfig = timeDataConfig;
     }
 
-    private Long latestSyncArchiveTime(InternalKey internalKey) {
+    private Long latestDBTime(InternalKey internalKey) {
         Response response = kvStoreUtil.hGet(internalKey, LATEST_ARCHIVE);
         if (response.notFound()) return 0L;
         return response.asLong();
     }
 
-    private Long latestLocalSaveTime(InternalKey internalKey) {
+    private Long latestCacheTime(InternalKey internalKey) {
         Object val = cacheUtil.getVal(internalKey, LATEST_TIME);
         if (val instanceof Long) return (Long) val;
         return 0L;
@@ -80,9 +80,24 @@ class TimeDataUtilImpl implements TimeDataUtil {
         return args;
     }
 
+    private Map<Object, Object> packageMap(Object val) {
+        val = JSON.toJSONString(val);
+        Map<Object, Object> map = new HashMap<>();
+        long timestamp = System.currentTimeMillis();
+        map.put(timestamp, val);
+        map.put(LATEST_VAL, val);
+        map.put(LATEST_TIME, timestamp);
+        return map;
+    }
+
     @Override
     public void set(String[] tags, Object val) {
-        set(new InternalKey(tags), val);
+        cacheUtil.multiSet(new InternalKey(tags), packageMap(val));
+    }
+
+    @Override
+    public void setSync(String[] tags, Object val) {
+        kvStoreUtil.hMultiSet(new InternalKey(tags), packageMap(val));
     }
 
     @Override
@@ -91,14 +106,10 @@ class TimeDataUtilImpl implements TimeDataUtil {
         set(tags, val);
     }
 
-    private void set(InternalKey internalKey, Object val) {
-        val = JSON.toJSONString(val);
-        Map<Object, Object> map = new HashMap<>();
-        long timestamp = System.currentTimeMillis();
-        map.put(timestamp, val);
-        map.put(LATEST_VAL, val);
-        map.put(LATEST_TIME, timestamp);
-        cacheUtil.multiSet(internalKey, map);
+    @Override
+    public void setSync(String[] tags, String primeType, Object val) {
+        switchByPrime(tags, primeType);
+        setSync(tags, val);
     }
 
     @Override
@@ -108,13 +119,16 @@ class TimeDataUtilImpl implements TimeDataUtil {
 
     @Override
     public List<String> searchKeys(String primeType, String searchType, String searchTag) {
-        if (searchType == primeType) return searchKeys(searchType, searchTag);
+        if (searchType.equals(primeType)) return searchKeys(searchType, searchTag);
         return StreamProxy.stream(kvStoreUtil.hScanName(primeType + "/")).filter(s -> s.contains(searchType + "/" + searchTag)).collect(Collectors.toList());
     }
 
     @Override
     public <T> T get(String[] tags, Long timestamp, Class<T> clazz) throws Exception {
-        return get(new InternalKey(tags), timestamp, clazz);
+        InternalKey internalKey = new InternalKey(tags);
+        T t = cacheUtil.get(internalKey, timestamp, clazz);
+        if (t != null) return t;
+        return getFromDB(internalKey, timestamp, clazz);
     }
 
     @Override
@@ -123,28 +137,29 @@ class TimeDataUtilImpl implements TimeDataUtil {
         return get(tags, timestamp, clazz);
     }
 
-    private <T> T get(InternalKey internalKey, Long timestamp, Class<T> clazz) throws Exception {
-        T t = cacheUtil.get(internalKey, timestamp, clazz);
-        if (t != null) return t;
-        return getSync(internalKey, timestamp, clazz);
-    }
-
-    private <T> T getSync(InternalKey internalKey, Long timestamp, Class<T> clazz) throws Exception {
-        return (T) persistUtil.downloadMap(kvStoreUtil.hLowerBoundVal(internalKey, timestamp)).get(timestamp);
+    @Override
+    public <T> T getSync(String[] tags, Long timestamp, Class<T> clazz) throws Exception {
+        return getFromDB(new InternalKey(tags), timestamp, clazz);
     }
 
     @Override
-    public <T> Map<Object, T> get(String[] tags, Long startTime, Long endTime, Class<T> clazz) throws Exception {
-        return get(new InternalKey(tags), startTime, endTime, clazz);
-    }
-
-    @Override
-    public <T> Map<Object, T> get(String[] tags, String primeType, Long startTime, Long endTime, Class<T> clazz) throws Exception {
+    public <T> T getSync(String[] tags, String primeType, Long timestamp, Class<T> clazz) throws Exception {
         switchByPrime(tags, primeType);
-        return get(tags, startTime, endTime, clazz);
+        return getSync(tags, timestamp, clazz);
     }
 
-    private <T> Map<Object, T> get(InternalKey internalKey, Long startTime, Long endTime, Class<T> clazz) throws Exception {
+    private <T> T getFromDB(InternalKey internalKey, Long timestamp, Class<T> clazz) throws Exception {
+        return persistUtil.downloadMap(kvStoreUtil.hLowerBoundVal(internalKey, timestamp), Long.class, clazz).get(timestamp);
+    }
+
+    @Async
+    protected <T> Future<Map<Long, T>> asyncDownloadMap(String path, Class<T> clazz) throws Exception {
+        return new AsyncResult<>(persistUtil.downloadMap(path, Long.class, clazz));
+    }
+
+    @Override
+    public <T> Map<Long, T> get(String[] tags, Long startTime, Long endTime, Class<T> clazz) throws Exception {
+        InternalKey internalKey = new InternalKey(tags);
         //根据输入确定起始，最终位置
         final long startKey;
         final long endKey;
@@ -153,14 +168,15 @@ class TimeDataUtilImpl implements TimeDataUtil {
             endTime = System.currentTimeMillis();
             endKey = endTime;
         } else {
+            //大于终止时间的第一个文件对应的key，一次SSDB访问
             Response response = kvStoreUtil.hLowerBoundKey(internalKey, endTime);
             if (response.notFound()) endKey = endTime;//如果没有比endTime更新的文件
-            else endKey = response.asLong();//大于终止时间的第一个文件对应的key，一次SSDB访问
+            else endKey = response.asLong();
         }
         //结果表
-        Map<Object, T> result = new HashMap<>();
+        Map<Long, T> result = new HashMap<>();
         //获取SSDB上次同步时间，一次SSDB访问
-        Long latestSyncArchiveTime = latestSyncArchiveTime(internalKey);
+        Long latestSyncArchiveTime = latestDBTime(internalKey);
         //如果结束key大于SSDB上次同步时间，则访问本地缓存
         if (endKey >= latestSyncArchiveTime) result.putAll(cacheUtil.scan(internalKey, startKey, endKey, clazz));
         //开始key小于SSDB上次同步时间
@@ -171,23 +187,22 @@ class TimeDataUtilImpl implements TimeDataUtil {
                 //特殊情况，仅一个文件
                 if (values.size() == 1) {
                     //下载文件,一次FastDFS访问
-                    Map<Object, T> fileMap = persistUtil.downloadMap(values.get(0));
+                    Map<Long, T> fileMap = persistUtil.downloadMap(values.get(0), Long.class, clazz);
                     //筛选文件中不小于startKey，不大于endKey的数据
-                    StreamProxy.stream(fileMap.entrySet()).filter(e -> (Long) e.getKey() >= startKey && (Long) e.getKey() <= endKey).forEach(e -> result.put(e.getKey(), e.getValue()));
-                }
-                else if (values.size() > 1) {
+                    StreamProxy.stream(fileMap.entrySet()).filter(e -> e.getKey() >= startKey && e.getKey() <= endKey).forEach(e -> result.put(e.getKey(), e.getValue()));
+                } else {
                     //异步下载第一个文件，一次FastDFS访问
-                    Future<Map<Object, T>> firstFileFuture = asyncDownloadMap(values.get(0));
+                    Future<Map<Long, T>> firstFileFuture = asyncDownloadMap(values.get(0), clazz);
                     //异步下载最后一个文件，一次FastDFS访问
-                    Future<Map<Object, T>> lastFileFuture = asyncDownloadMap(values.get(values.size() - 1));
+                    Future<Map<Long, T>> lastFileFuture = asyncDownloadMap(values.get(values.size() - 1), clazz);
                     //如果文件数大于2，获取第二到倒数第二个文件中全部数据
                     if (values.size() > 2)
                         //数据量大于1时使用parallelStream,否则在当前线程执行，N次FastDFS访问
-                        StreamProxy.stream(1, values.subList(1, values.size() - 1)).map(Try.of(persistUtil::downloadMap)).forEach(result::putAll);
+                        StreamProxy.stream(1, values.subList(1, values.size() - 1)).map(Try.of(path -> persistUtil.downloadMap(path, Long.class, clazz))).forEach(result::putAll);
                     //第一个文件中筛选不小于startKey的数据
-                    StreamProxy.stream(firstFileFuture.get().entrySet()).filter(e -> (Long) e.getKey() >= startKey).forEach(e -> result.put(e.getKey(), e.getValue()));
+                    StreamProxy.stream(firstFileFuture.get().entrySet()).filter(e -> e.getKey() >= startKey).forEach(e -> result.put(e.getKey(), e.getValue()));
                     //最后一个文件中筛选不大于endKey的数据
-                    StreamProxy.stream(lastFileFuture.get().entrySet()).filter(e -> (Long) e.getKey() <= endKey).forEach(e -> result.put(e.getKey(), e.getValue()));
+                    StreamProxy.stream(lastFileFuture.get().entrySet()).filter(e -> e.getKey() <= endKey).forEach(e -> result.put(e.getKey(), e.getValue()));
                 }
             }
         }
@@ -195,14 +210,33 @@ class TimeDataUtilImpl implements TimeDataUtil {
         return result;
     }
 
-    @Async
-    protected <T> Future<Map<Object, T>> asyncDownloadMap(String path) throws Exception {
-        return new AsyncResult<Map<Object, T>>(persistUtil.downloadMap(path));
+    @Override
+    public <T> Map<Long, T> get(String[] tags, String primeType, Long startTime, Long endTime, Class<T> clazz) throws Exception {
+        switchByPrime(tags, primeType);
+        return get(tags, startTime, endTime, clazz);
+    }
+
+    @Override
+    public <T> Map<Long, T> getSync(String[] tags, Long startTime, Long endTime, Class<T> clazz) {
+        //根据输入确定起始，最终位置
+        final long startKey = startTime == null ? 0L : startTime;
+        final long endKey = endTime == null ? System.currentTimeMillis() : endTime;
+        return kvStoreUtil.hScan(new InternalKey(tags), startKey, endKey, Long.class, clazz);
+    }
+
+    @Override
+    public <T> Map<Long, T> getSync(String[] tags, String primeType, Long startTime, Long endTime, Class<T> clazz) {
+        switchByPrime(tags, primeType);
+        return getSync(tags, startTime, endTime, clazz);
     }
 
     @Override
     public <T> T getLatest(String[] tags, Class<T> clazz) throws Exception {
-        return getLatest(new InternalKey(tags), clazz);
+        InternalKey internalKey = new InternalKey(tags);
+        Long latestDBTime = latestDBTime(internalKey);
+        if (latestCacheTime(internalKey) > latestDBTime)
+            return cacheUtil.get(internalKey, LATEST_VAL, clazz);
+        return getFromDB(internalKey, latestDBTime, clazz);
     }
 
     @Override
@@ -211,16 +245,13 @@ class TimeDataUtilImpl implements TimeDataUtil {
         return getLatest(tags, clazz);
     }
 
-    private <T> T getLatest(InternalKey internalKey, Class<T> clazz) throws Exception {
-        Long latestSyncArchiveTime = latestSyncArchiveTime(internalKey);
-        if (latestLocalSaveTime(internalKey) > latestSyncArchiveTime)
-            return cacheUtil.get(internalKey, LATEST_VAL, clazz);
-        return getSync(internalKey, latestSyncArchiveTime, clazz);
-    }
-
     @Override
     public void del(String[] tags) {
-        del(new InternalKey(tags));
+        InternalKey internalKey = new InternalKey(tags);
+        cacheUtil.clear(internalKey);
+        if (timeDataConfig.getDeleteValueTogether())
+            persistUtil.multiDelete(kvStoreUtil.hGetAll(internalKey).mapString().values());
+        kvStoreUtil.hClear(internalKey);
     }
 
     @Override
@@ -229,29 +260,19 @@ class TimeDataUtilImpl implements TimeDataUtil {
         del(tags);
     }
 
-    private void del(InternalKey internalKey) {
-        cacheUtil.clear(internalKey);
-        if (timeDataConfig.getDeleteValueTogether())
-            persistUtil.multiDelete(kvStoreUtil.hGetAll(internalKey).mapString().values());
-        kvStoreUtil.hClear(internalKey);
-    }
-
     @Override
     public void del(String[] tags, Long startTime, Long endTime) {
-        del(new InternalKey(tags), startTime, endTime);
+        InternalKey internalKey = new InternalKey(tags);
+        cacheUtil.delete(internalKey, startTime, endTime);
+        if (timeDataConfig.getDeleteValueTogether())
+            persistUtil.multiDelete(kvStoreUtil.hScan(internalKey, startTime, endTime).values());
+        kvStoreUtil.hDel(internalKey, startTime, endTime);
     }
 
     @Override
     public void del(String[] tags, String primeType, Long startTime, Long endTime) {
         switchByPrime(tags, primeType);
         del(tags, startTime, endTime);
-    }
-
-    private void del(InternalKey internalKey, Long startTime, Long endTime) {
-        cacheUtil.delete(internalKey, startTime, endTime);
-        if (timeDataConfig.getDeleteValueTogether())
-            persistUtil.multiDelete(kvStoreUtil.hScan(internalKey, startTime, endTime).values());
-        kvStoreUtil.hDel(internalKey, startTime, endTime);
     }
 
     private Long latestLocalArchiveTime(InternalKey internalKey) {
@@ -265,7 +286,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     public void archiveJob() {
         StreamProxy.parallelStream(cacheUtil.allInternalKeys()).forEach(internalKey -> {
             Long archiveTime = System.currentTimeMillis();
-            Map valueMap = cacheUtil.scan(internalKey, latestLocalArchiveTime(internalKey), archiveTime);
+            Map<Long, Object> valueMap = cacheUtil.scan(internalKey, latestLocalArchiveTime(internalKey), archiveTime);
             if (valueMap.size() != 0) {
                 String fileId;
                 String content = JSONUtil.toMapJSON(valueMap);

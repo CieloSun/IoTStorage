@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 public interface KVStoreUtil {
     //设置一个基本类型值
@@ -65,14 +66,15 @@ public interface KVStoreUtil {
     Response del(Object key);
 
     //基于前缀删除多个key，异步
-    Response multiDel(Object prefix);
+    @Async
+    Future<Response> multiDel(Object prefix);
 
     @Async
-    Response multiDel(Object prefix, Object fromKey, Object endKey);
+    Future<Response> multiDel(Object prefix, Object fromKey, Object endKey);
 
     //删除多个key，异步
     @Async
-    Response multiDel(Object[] keys);
+    Future<Response> multiDel(Object[] keys);
 
     //判断一个key是否存在
     boolean exists(Object key);
@@ -127,9 +129,9 @@ public interface KVStoreUtil {
 
     Map<String, String> hScan(InternalKey internalKey, Object prefix);
 
-    <T> Map<Object, T> hScan(InternalKey internalKey, Object fromKey, Object endKey, Class<T> clazz);
+    <K,V> Map<K, V> hScan(InternalKey internalKey, Object fromKey, Object endKey, Class<K> kType, Class<V> vType);
 
-    <T> Map<Object, T> hScan(InternalKey internalKey, Object prefix, Class<T> clazz);
+    <K,V> Map<K, V> hScan(InternalKey internalKey, Object prefix, Class<K> kType, Class<V> vType);
 
     String hScanValues(InternalKey internalKey, Object fromKey, Object endKey);
 
@@ -147,9 +149,11 @@ public interface KVStoreUtil {
 
     Response hDel(InternalKey internalKey, Object key);
 
-    Response hDel(InternalKey internalKey, Object fromKey, Object endKey);
+    @Async
+    Future<Response> hDel(InternalKey internalKey, Object fromKey, Object endKey);
 
-    Response hClear(InternalKey internalKey);
+    @Async
+    Future<Response> hClear(InternalKey internalKey);
 
     Response sSet(Object name, Object element);
 
@@ -157,7 +161,9 @@ public interface KVStoreUtil {
 
     List<String> sScan(Object name, Object startElement, Object endElement);
 
-    Response sClear(Object name);
+    @Async
+    Future<Response> sClear(Object name);
 
-    Response sDel(Object name, Object element);
+    @Async
+    Future<Response> sDel(Object name, Object element);
 }

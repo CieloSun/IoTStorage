@@ -15,9 +15,9 @@ public interface CacheUtil {
 
     Object getVal(InternalKey cacheName, Object key);
 
-    Map scan(InternalKey cacheName, Long startKey, Long endKey);
+    Map<Long, Object> scan(InternalKey cacheName, Long startKey, Long endKey);
 
-    <T> Map<Object, T> scan(InternalKey cacheName, Long startKey, Long endKey, Class<T> clazz);
+    <T> Map<Long, T> scan(InternalKey cacheName, Long startKey, Long endKey, Class<T> clazz);
 
     List<String> searchCacheNames(String prefix);
 

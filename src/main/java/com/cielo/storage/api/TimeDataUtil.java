@@ -15,6 +15,12 @@ public interface TimeDataUtil {
     //根据tags存储数据，并手动指定primeType
     void set(String[] tags, String primeType, Object val);
 
+    //根据tags存储数据
+    void setSync(String[] tags, Object val);
+
+    //根据tags存储数据，并手动指定primeType
+    void setSync(String[] tags, String primeType, Object val);
+
     //根据primeType和primeTag查找数据
     List<String> searchKeys(String primeType, String primeTag);
 
@@ -27,11 +33,19 @@ public interface TimeDataUtil {
     //根据tags获取可能归档的hashMap中具体某条数据，并手动指定primeType
     <T> T get(String[] tags, String primeType, Long timestamp, Class<T> clazz) throws Exception;
 
+    <T> T getSync(String[] tags, Long timestamp, Class<T> clazz) throws Exception;
+
+    <T> T getSync(String[] tags, String primeType, Long timestamp, Class<T> clazz) throws Exception;
+
     //根据tags获取获取可能归档的hashMap中某段数据
-    <T> Map<Object, T> get(String[] tags, Long startTime, Long endTime, Class<T> clazz) throws Exception;
+    <T> Map<Long, T> get(String[] tags, Long startTime, Long endTime, Class<T> clazz) throws Exception;
 
     //根据tags获取获取可能归档的hashMap中某段数据，并手动指定primeType
-    <T> Map<Object, T> get(String[] tags, String primeType, Long startTime, Long endTime, Class<T> clazz) throws Exception;
+    <T> Map<Long, T> get(String[] tags, String primeType, Long startTime, Long endTime, Class<T> clazz) throws Exception;
+
+    <T> Map<Long, T> getSync(String[] tags, Long startTime, Long endTime, Class<T> clazz) throws Exception;
+
+    <T> Map<Long, T> getSync(String[] tags, String primeType, Long startTime, Long endTime, Class<T> clazz) throws Exception;
 
     //根据tags获取获取最新一条数据
     <T> T getLatest(String[] tags, Class<T> clazz) throws Exception;

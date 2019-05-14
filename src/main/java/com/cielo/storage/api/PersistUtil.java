@@ -20,7 +20,7 @@ public interface PersistUtil {
 
     String upload(byte[] fileContent, String key, Map<String, String> infos);
 
-    Map downloadMap(String path) throws Exception;
+    <K, V> Map<K, V> downloadMap(String path, Class<K> keyType, Class<V> valueType) throws Exception;
 
     String downloadString(String path) throws Exception;
 

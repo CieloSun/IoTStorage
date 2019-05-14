@@ -1,6 +1,7 @@
 package com.cielo.storage.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.cielo.storage.api.FDFSUtil;
 import com.cielo.storage.api.PersistUtil;
 import com.cielo.storage.config.CompressionConfig;
@@ -119,8 +120,9 @@ class PersistUtilImpl implements CommandLineRunner, PersistUtil {
     }
 
     @Override
-    public Map downloadMap(String path) throws Exception {
-        return JSON.parseObject(downloadString(path), Map.class);
+    public <K, V> Map<K, V> downloadMap(String path, Class<K> keyType, Class<V> valueType) throws Exception {
+        return JSON.parseObject(downloadString(path), new TypeReference<Map<K, V>>(keyType, valueType) {
+        });
     }
 
     @Override

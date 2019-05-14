@@ -1,6 +1,7 @@
 package com.cielo.storage.tool;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,8 @@ public class JSONUtil {
         return stringBuilder.replace(stringBuilder.length() - 1, stringBuilder.length(), "}").toString();
     }
 
-    public static Map toMap(Map<?, ?> jsonMap) {
-        return JSON.parseObject(toMapJSON(jsonMap), Map.class);
+    public static <K, V> Map<K, V> toMap(Map<?, ?> jsonMap, Class<K> k, Class<V> v) {
+        return JSON.parseObject(toMapJSON(jsonMap), new TypeReference<Map<K, V>>(k, v) {
+        });
     }
 }

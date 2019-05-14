@@ -11,26 +11,30 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.nutz.ssdb4j.SSDBs;
 import org.nutz.ssdb4j.spi.Response;
 import org.nutz.ssdb4j.spi.SSDB;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 @Service
 @Primary
 @Order(2)
 class KVStoreUtilImpl implements CommandLineRunner, KVStoreUtil {
-    @Autowired
-    private KVStoreConfig KVStoreConfig;
+    private final KVStoreConfig KVStoreConfig;
     private SSDB ssdb;
 
-    protected GenericObjectPoolConfig genericObjectPoolConfig() {
+    public KVStoreUtilImpl(KVStoreConfig KVStoreConfig) {
+        this.KVStoreConfig = KVStoreConfig;
+    }
+
+    private GenericObjectPoolConfig genericObjectPoolConfig() {
         //配置线程池
         GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
         genericObjectPoolConfig.setMaxIdle(KVStoreConfig.getMaxIdle());
@@ -167,19 +171,21 @@ class KVStoreUtilImpl implements CommandLineRunner, KVStoreUtil {
     //删除多个key，异步
     @Override
     @Async
-    public Response multiDel(Object[] keys) {
-        return ssdb.multi_del(keys);
+    public Future<Response> multiDel(Object[] keys) {
+        return new AsyncResult<>(ssdb.multi_del(keys));
     }
 
     @Override
-    public Response multiDel(Object prefix, Object fromKey, Object endKey) {
-        return ssdb.multi_del(scanKeys(fromKey, endKey).toArray());
+    @Async
+    public Future<Response> multiDel(Object prefix, Object fromKey, Object endKey) {
+        return new AsyncResult<>(ssdb.multi_del(scanKeys(fromKey, endKey).toArray()));
     }
 
     //基于前缀删除多个key，异步
     @Override
-    public Response multiDel(Object prefix) {
-        return ssdb.multi_del(scanKeys(prefix).toArray());
+    @Async
+    public Future<Response> multiDel(Object prefix) {
+        return new AsyncResult<>(ssdb.multi_del(scanKeys(prefix).toArray()));
     }
 
     //判断一个key是否存在
@@ -311,13 +317,13 @@ class KVStoreUtilImpl implements CommandLineRunner, KVStoreUtil {
     }
 
     @Override
-    public <T> Map<Object, T> hScan(InternalKey internalKey, Object fromKey, Object endKey, Class<T> clazz) {
-        return JSONUtil.toMap(hScan(internalKey, fromKey, endKey));
+    public <K, V> Map<K, V> hScan(InternalKey internalKey, Object fromKey, Object endKey, Class<K> kType, Class<V> vType) {
+        return JSONUtil.toMap(hScan(internalKey, fromKey, endKey), kType, vType);
     }
 
     @Override
-    public <T> Map<Object, T> hScan(InternalKey internalKey, Object prefix, Class<T> clazz) {
-        return JSONUtil.toMap(hScan(internalKey, prefix));
+    public <K, V> Map<K, V> hScan(InternalKey internalKey, Object prefix, Class<K> kType, Class<V> vType) {
+        return JSONUtil.toMap(hScan(internalKey, prefix), kType, vType);
     }
 
     @Override
@@ -362,14 +368,14 @@ class KVStoreUtilImpl implements CommandLineRunner, KVStoreUtil {
 
     @Override
     @Async
-    public Response hDel(InternalKey internalKey, Object fromKey, Object endKey) {
-        return ssdb.multi_hdel(internalKey.toString(), hScanKeys(internalKey, fromKey, endKey));
+    public Future<Response> hDel(InternalKey internalKey, Object fromKey, Object endKey) {
+        return new AsyncResult<>(ssdb.multi_hdel(internalKey.toString(), hScanKeys(internalKey, fromKey, endKey)));
     }
 
     @Override
     @Async
-    public Response hClear(InternalKey internalKey) {
-        return ssdb.hclear(internalKey.toString());
+    public Future<Response> hClear(InternalKey internalKey) {
+        return new AsyncResult<>(ssdb.hclear(internalKey.toString()));
     }
 
     @Override
@@ -389,13 +395,13 @@ class KVStoreUtilImpl implements CommandLineRunner, KVStoreUtil {
 
     @Override
     @Async
-    public Response sClear(Object name) {
-        return ssdb.hclear(name);
+    public Future<Response> sClear(Object name) {
+        return new AsyncResult<>(ssdb.hclear(name));
     }
 
     @Override
     @Async
-    public Response sDel(Object name, Object element) {
-        return ssdb.hdel(name, element);
+    public Future<Response> sDel(Object name, Object element) {
+        return new AsyncResult<>(ssdb.hdel(name, element));
     }
 }
