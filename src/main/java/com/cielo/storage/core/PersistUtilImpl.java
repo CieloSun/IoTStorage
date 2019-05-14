@@ -27,14 +27,17 @@ import java.util.Map;
 @Order(3)
 class PersistUtilImpl implements CommandLineRunner, PersistUtil {
     private static final String SHORT_CONTENT_LABEL = "sc@@";
-    Logger logger = LoggerFactory.getLogger(this.getClass());
-    @Autowired
-    private CompressionConfig compressionConfig;
-    @Autowired
-    private KVStoreConfig KVStoreConfig;
-    @Autowired
-    private FDFSUtil fdfsUtil;
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final CompressionConfig compressionConfig;
+    private final KVStoreConfig KVStoreConfig;
+    private final FDFSUtil fdfsUtil;
     private byte[] compressDictionary;
+
+    public PersistUtilImpl(CompressionConfig compressionConfig, KVStoreConfig KVStoreConfig, FDFSUtil fdfsUtil) {
+        this.compressionConfig = compressionConfig;
+        this.KVStoreConfig = KVStoreConfig;
+        this.fdfsUtil = fdfsUtil;
+    }
 
     private byte[] compress(byte[] bytes) {
         return Zstd.compressUsingDict(bytes, compressDictionary, compressionConfig.getCompressionLevel());

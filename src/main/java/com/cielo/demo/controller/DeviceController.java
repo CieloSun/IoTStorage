@@ -39,7 +39,7 @@ public class DeviceController {
     }
 
     @GetMapping("info/{token}")
-    public Map<Object, DeviceInfoModel> getDeviceInfo(@PathVariable String token, String deviceId, Integer function, Long startTime, @RequestParam(required = false) Long endTime) {
+    public Map<Long, DeviceInfoModel> getDeviceInfo(@PathVariable String token, String deviceId, Integer function, Long startTime, @RequestParam(required = false) Long endTime) throws Exception {
         return deviceService.getDeviceInfoByTime(deviceId, function, startTime, endTime);
     }
 

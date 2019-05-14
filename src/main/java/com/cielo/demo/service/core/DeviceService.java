@@ -56,7 +56,7 @@ public class DeviceService {
     }
 
     //批量归档中获取多个对象
-    public Map<Object, DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) throws Exception {
+    public Map<Long, DeviceInfoModel> getDeviceInfoByTime(String deviceId, Integer functionId, Long startDate, Long endDate) throws Exception {
         return timeDataUtil.get(deviceTag(deviceId, functionId), startDate, endDate, DeviceInfoModel.class);
     }
 
