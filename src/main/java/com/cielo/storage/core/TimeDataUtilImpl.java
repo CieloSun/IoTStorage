@@ -14,8 +14,6 @@ import org.nutz.ssdb4j.spi.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -23,7 +21,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 //用于管理较小value，采用小数据合并的方式归档SSDB中数据
@@ -149,12 +147,7 @@ class TimeDataUtilImpl implements TimeDataUtil {
     }
 
     private <T> T getFromDB(InternalKey internalKey, Long timestamp, Class<T> clazz) throws Exception {
-        return persistUtil.downloadMap(kvStoreUtil.hLowerBoundVal(internalKey, timestamp), Long.class, clazz).get(timestamp);
-    }
-
-    @Async
-    protected <T> Future<Map<Long, T>> asyncDownloadMap(String path, Class<T> clazz) throws Exception {
-        return new AsyncResult<>(persistUtil.downloadMap(path, Long.class, clazz));
+        return persistUtil.downloadMap(kvStoreUtil.hLowerBoundVal(internalKey, timestamp), Long.class, clazz).get().get(timestamp);
     }
 
     @Override
@@ -187,18 +180,18 @@ class TimeDataUtilImpl implements TimeDataUtil {
                 //特殊情况，仅一个文件
                 if (values.size() == 1) {
                     //下载文件,一次FastDFS访问
-                    Map<Long, T> fileMap = persistUtil.downloadMap(values.get(0), Long.class, clazz);
+                    Map<Long, T> fileMap = persistUtil.downloadMap(values.get(0), Long.class, clazz).get();
                     //筛选文件中不小于startKey，不大于endKey的数据
                     StreamProxy.stream(fileMap.entrySet()).filter(e -> e.getKey() >= startKey && e.getKey() <= endKey).forEach(e -> result.put(e.getKey(), e.getValue()));
                 } else {
                     //异步下载第一个文件，一次FastDFS访问
-                    Future<Map<Long, T>> firstFileFuture = asyncDownloadMap(values.get(0), clazz);
+                    CompletableFuture<Map<Long, T>> firstFileFuture = persistUtil.downloadMap(values.get(0), Long.class, clazz);
                     //异步下载最后一个文件，一次FastDFS访问
-                    Future<Map<Long, T>> lastFileFuture = asyncDownloadMap(values.get(values.size() - 1), clazz);
+                    CompletableFuture<Map<Long, T>> lastFileFuture = persistUtil.downloadMap(values.get(values.size() - 1), Long.class, clazz);
                     //如果文件数大于2，获取第二到倒数第二个文件中全部数据
                     if (values.size() > 2)
                         //数据量大于1时使用parallelStream,否则在当前线程执行，N次FastDFS访问
-                        StreamProxy.stream(1, values.subList(1, values.size() - 1)).map(Try.of(path -> persistUtil.downloadMap(path, Long.class, clazz))).forEach(result::putAll);
+                        StreamProxy.stream(1, values.subList(1, values.size() - 1)).map(Try.of(path -> persistUtil.downloadMap(path, Long.class, clazz))).map(Try.of(CompletableFuture::get)).forEach(result::putAll);
                     //第一个文件中筛选不小于startKey的数据
                     StreamProxy.stream(firstFileFuture.get().entrySet()).filter(e -> e.getKey() >= startKey).forEach(e -> result.put(e.getKey(), e.getValue()));
                     //最后一个文件中筛选不大于endKey的数据
@@ -288,22 +281,26 @@ class TimeDataUtilImpl implements TimeDataUtil {
             Long archiveTime = System.currentTimeMillis();
             Map<Long, Object> valueMap = cacheUtil.scan(internalKey, latestLocalArchiveTime(internalKey), archiveTime);
             if (valueMap.size() != 0) {
-                String fileId;
+                CompletableFuture<String> uploadTask;
                 String content = JSONUtil.toMapJSON(valueMap);
-                if (timeDataConfig.getSaveKeyInValue()) {
-                    Map<String, String> infos = new HashMap<>();
-                    infos.put("internalKey", internalKey.toString());
-                    infos.put("timestamp", archiveTime.toString());
-                    fileId = persistUtil.upload(content, infos);
-                } else fileId = persistUtil.upload(content);
-                if (StringUtils.hasText(fileId)) {
-                    cacheUtil.set(internalKey, LATEST_ARCHIVE, archiveTime);
-                    Map<Object, Object> map = new HashMap<>();
-                    map.put(LATEST_ARCHIVE, archiveTime);
-                    map.put(archiveTime, fileId);
-                    kvStoreUtil.hMultiSet(internalKey, map);
-                    logger.info(internalKey + ":" + fileId + " has archived on " + new Date(archiveTime));
-                } else logger.info(internalKey + " cannot archive.");
+                try {
+                    if (timeDataConfig.getSaveKeyInValue()) {
+                        Map<String, String> infos = new HashMap<>();
+                        infos.put("internalKey", internalKey.toString());
+                        infos.put("timestamp", archiveTime.toString());
+                        uploadTask = persistUtil.upload(content, infos);
+                    } else uploadTask = persistUtil.upload(content);
+                    if (StringUtils.hasText(uploadTask.get())) {
+                        cacheUtil.set(internalKey, LATEST_ARCHIVE, archiveTime);
+                        Map<Object, Object> map = new HashMap<>();
+                        map.put(LATEST_ARCHIVE, archiveTime);
+                        map.put(archiveTime, uploadTask);
+                        kvStoreUtil.hMultiSet(internalKey, map);
+                        logger.info(internalKey + ":" + uploadTask + " has archived on " + new Date(archiveTime));
+                    } else logger.info(internalKey + " cannot archive.");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             } else logger.info("Nothing needs to archive.");
         });
     }

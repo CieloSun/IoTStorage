@@ -6,11 +6,11 @@ import com.cielo.storage.api.FDFSUtil;
 import com.cielo.storage.api.PersistUtil;
 import com.cielo.storage.config.CompressionConfig;
 import com.cielo.storage.config.KVStoreConfig;
+import com.cielo.storage.fastdfs.FileId;
 import com.cielo.storage.tool.StreamProxy;
 import com.github.luben.zstd.Zstd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Order(3)
@@ -66,66 +67,71 @@ class PersistUtilImpl implements CommandLineRunner, PersistUtil {
     }
 
     @Override
-    public String upload(String content) {
+    public CompletableFuture<String> upload(String content) throws Exception {
         return upload(content.getBytes());
     }
 
     @Override
-    public String upload(String content, String key) {
+    public CompletableFuture<String> upload(String content, String key) throws Exception {
         return upload(content.getBytes(), key);
     }
 
     @Override
-    public String upload(String content, Map<String, String> infos) {
+    public CompletableFuture<String> upload(String content, Map<String, String> infos) throws Exception {
         return upload(content.getBytes(), infos);
     }
 
     @Override
-    public String upload(String content, String key, Map<String, String> infos) {
+    public CompletableFuture<String> upload(String content, String key, Map<String, String> infos) throws Exception {
         return upload(content.getBytes(), key, infos);
     }
 
     @Override
-    public String upload(byte[] fileContent) {
+    public CompletableFuture<String> upload(byte[] fileContent) throws Exception {
         return upload(fileContent, null, null);
     }
 
     @Override
-    public String upload(byte[] fileContent, String key) {
+    public CompletableFuture<String> upload(byte[] fileContent, String key) throws Exception {
         return upload(fileContent, key, null);
     }
 
     @Override
-    public String upload(byte[] fileContent, Map<String, String> infos) {
+    public CompletableFuture<String> upload(byte[] fileContent, Map<String, String> infos) throws Exception {
         return upload(fileContent, null, infos);
     }
 
+    private CompletableFuture<String> uploadShort(byte[] shortContent) {
+        return CompletableFuture.supplyAsync(() -> SHORT_CONTENT_LABEL + shortContent);
+    }
+
     @Override
-    public String upload(byte[] fileContent, String key, Map<String, String> infos) {
+    public CompletableFuture<String> upload(byte[] fileContent, String key, Map<String, String> infos) throws Exception {
         //如果是小数据不压缩直接存kv存储
-        if (fileContent.length <= KVStoreConfig.getMaxSizeOfSingleValue())
-            return SHORT_CONTENT_LABEL + new String(fileContent);
+        if (fileContent.length <= KVStoreConfig.getMaxSizeOfSingleValue()) return uploadShort(fileContent);
         if (compressionConfig.isCompression()) fileContent = compress(fileContent);
-        return fdfsUtil.upload(fileContent, key, infos);
+        return fdfsUtil.upload(fileContent, key, infos).thenApply(FileId::toString);
     }
 
     @Override
-    public byte[] downloadBytes(String path) throws Exception {
-        if (path.startsWith(SHORT_CONTENT_LABEL)) return path.replaceFirst(SHORT_CONTENT_LABEL, "").getBytes();
-        byte[] bytes = fdfsUtil.download(path);
-        if (compressionConfig.isCompression()) bytes = decompress(bytes);
-        return bytes;
-    }
-
-    @Override
-    public String downloadString(String path) throws Exception {
-        return new String(downloadBytes(path));
-    }
-
-    @Override
-    public <K, V> Map<K, V> downloadMap(String path, Class<K> keyType, Class<V> valueType) throws Exception {
-        return JSON.parseObject(downloadString(path), new TypeReference<Map<K, V>>(keyType, valueType) {
+    public CompletableFuture<byte[]> downloadBytes(String path) throws Exception {
+        if (path.startsWith(SHORT_CONTENT_LABEL))
+            return CompletableFuture.supplyAsync(() -> path.replaceFirst(SHORT_CONTENT_LABEL, "").getBytes());
+        return fdfsUtil.download(path).thenApply(bys -> {
+            if (compressionConfig.isCompression()) bys = decompress(bys);
+            return bys;
         });
+    }
+
+    @Override
+    public CompletableFuture<String> downloadString(String path) throws Exception {
+        return downloadBytes(path).thenApply(String::new);
+    }
+
+    @Override
+    public <K, V> CompletableFuture<Map<K, V>> downloadMap(String path, Class<K> keyType, Class<V> valueType) throws Exception {
+        return downloadString(path).thenApply(s -> JSON.parseObject(s, new TypeReference<Map<K, V>>(keyType, valueType) {
+        }));
     }
 
     @Override

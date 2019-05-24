@@ -22,7 +22,7 @@ public class TestController {
 
     @GetMapping("upload")
     public String upload(String content) throws Exception {
-        return persistUtil.upload(content);
+        return persistUtil.upload(content).get();
     }
 
     @GetMapping("upMeta")
@@ -30,12 +30,12 @@ public class TestController {
         Map<String, String> map = new HashMap<>();
         map.put("tag", "test");
         map.put("timestamp", Long.toString(System.currentTimeMillis()));
-        return persistUtil.upload(content, map);
+        return persistUtil.upload(content, map).get();
     }
 
     @GetMapping("download")
     public String download(String path) throws Exception {
-        return persistUtil.downloadString(path);
+        return persistUtil.downloadString(path).get();
     }
 
     @GetMapping("archive")

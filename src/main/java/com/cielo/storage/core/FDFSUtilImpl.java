@@ -3,6 +3,7 @@ package com.cielo.storage.core;
 import com.cielo.storage.api.FDFSUtil;
 import com.cielo.storage.config.FDFSConfig;
 import com.cielo.storage.fastdfs.FastdfsClient;
+import com.cielo.storage.fastdfs.FileId;
 import com.cielo.storage.fastdfs.FileMetadata;
 import com.cielo.storage.fastdfs.TrackerServer;
 import com.cielo.storage.tool.StreamProxy;
@@ -16,6 +17,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,12 +48,12 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
     }
 
     @Override
-    public String upload(byte[] fileContent, String key, Map<String, String> infos) {
+    public CompletableFuture<FileId> upload(byte[] fileContent, String key, Map<String, String> infos) {
         try {
             if (StringUtils.isEmpty(key)) key = FILE_SUFFIX;
             return (fdfsConfig.isAssignGroup() ? infos == null ? fastdfsClient.upload(fdfsConfig.getGroup(), key, fileContent)
                     : fastdfsClient.upload(fdfsConfig.getGroup(), key, fileContent, new FileMetadata(infos)) : infos == null ? fastdfsClient.upload(key, fileContent)
-                    : fastdfsClient.upload(key, fileContent, new FileMetadata(infos))).get().toString();
+                    : fastdfsClient.upload(key, fileContent, new FileMetadata(infos)));
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -59,8 +61,8 @@ class FDFSUtilImpl implements CommandLineRunner, FDFSUtil {
     }
 
     @Override
-    public byte[] download(String path) throws Exception {
-        return fastdfsClient.download(path).get();
+    public CompletableFuture<byte[]> download(String path) throws Exception {
+        return fastdfsClient.download(path);
     }
 
     @Override

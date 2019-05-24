@@ -12,7 +12,7 @@ ssdb:
 fdfs:
   assign-group: false
   group: group2
-  trackers: ["ws.cielosun.club:22122"]
+  trackers: ["ws.cielosun.xyz:22122"]
   read-timeout: 500
   connect-timeout: 3000
 compression:
