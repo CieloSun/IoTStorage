@@ -4,7 +4,7 @@ server:
     uri-encoding: utf-8
 
 ssdb:
-  host: ws.cielosun.club
+  host: ws.cielosun.xyz
   port: 32768
   scan-number: 10000
   max-size-of-single-value: 256
